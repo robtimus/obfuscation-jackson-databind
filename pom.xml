@@ -77,7 +77,6 @@
     <version.junit>5.6.2</version.junit>
     <version.mockito>3.3.3</version.mockito>
     <version.obfuscation-annotations>1.0-SNAPSHOT</version.obfuscation-annotations>
-<!--     <version.slf4j>1.7.30</version.slf4j> -->
 
     <version.plugin.antrun>1.8</version.plugin.antrun>
     <version.plugin.assembly>3.1.1</version.plugin.assembly>
@@ -87,7 +86,6 @@
     <version.plugin.deploy>2.8.2</version.plugin.deploy>
     <version.plugin.gpg>1.6</version.plugin.gpg>
     <version.plugin.nexus-staging>1.6.8</version.plugin.nexus-staging>
-<!--     <version.plugin.i18n>1.0</version.plugin.i18n> -->
     <version.plugin.info-reports>3.0.0</version.plugin.info-reports>
     <version.plugin.install>2.5.2</version.plugin.install>
     <version.plugin.jar>3.1.1</version.plugin.jar>
@@ -111,19 +109,6 @@
       <artifactId>jackson-databind</artifactId>
       <version>${version.jackson}</version>
     </dependency>
-
-<!--     <dependency> -->
-<!--       <groupId>org.slf4j</groupId> -->
-<!--       <artifactId>slf4j-api</artifactId> -->
-<!--       <version>${version.slf4j}</version> -->
-<!--     </dependency> -->
-
-<!--     <dependency> -->
-<!--       <groupId>org.slf4j</groupId> -->
-<!--       <artifactId>slf4j-nop</artifactId> -->
-<!--       <version>${version.slf4j}</version> -->
-<!--       <scope>test</scope> -->
-<!--     </dependency> -->
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -281,28 +266,6 @@
           </execution>
         </executions>
       </plugin>
-
-<!--       <plugin> -->
-<!--         <groupId>com.github.robtimus</groupId> -->
-<!--         <artifactId>i18n-maven-plugin</artifactId> -->
-<!--         <version>${version.plugin.i18n}</version> -->
-<!--         <executions> -->
-<!--           <execution> -->
-<!--             <goals> -->
-<!--               <goal>generate</goal> -->
-<!--             </goals> -->
-<!--             <configuration> -->
-<!--               <bundleName>com.github.robtimus.obfuscation.jackson.databind.obfuscation-json</bundleName> -->
-<!--               <className>com.github.robtimus.obfuscation.jackson.databind.Messages</className> -->
-<!--               <licenseText>Apache-2.0</licenseText> -->
-<!--               <licenseCopyrightHolder>Rob Spoor</licenseCopyrightHolder> -->
-<!--               <licenseCopyrightYear>2020</licenseCopyrightYear> -->
-<!--               <publicVisibility>false</publicVisibility> -->
-<!--               <suppressWarnings>nls</suppressWarnings> -->
-<!--             </configuration> -->
-<!--           </execution> -->
-<!--         </executions> -->
-<!--       </plugin> -->
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
