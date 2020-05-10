@@ -1,5 +1,5 @@
 /*
- * ObfuscatedTest.java
+ * ObfuscationModuleTest.java
  * Copyright 2020 Rob Spoor
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,12 +64,12 @@ import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
 import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider.IntArrayToString;
 
 @SuppressWarnings({ "javadoc", "nls" })
-public class ObfuscatedTest {
+public class ObfuscationModuleTest {
 
     @Test
     @DisplayName("serialize")
     public void testSerialize() throws IOException {
-        Module module = ObfuscatedModule.defaultModule();
+        Module module = ObfuscationModule.defaultModule();
 
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(module);
@@ -103,7 +103,7 @@ public class ObfuscatedTest {
         @Test
         @DisplayName("with default module")
         public void testWithDefaultModule() throws IOException {
-            Module module = ObfuscatedModule.defaultModule();
+            Module module = ObfuscationModule.defaultModule();
 
             ObjectMapper mapper = new ObjectMapper()
                     .registerModule(module);
@@ -152,7 +152,7 @@ public class ObfuscatedTest {
         @Test
         @DisplayName("with custom module")
         public void testWithCustomModule() throws IOException {
-            Module module = ObfuscatedModule.builder()
+            Module module = ObfuscationModule.builder()
                     .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
                     .build();
 
@@ -199,7 +199,6 @@ public class ObfuscatedTest {
             assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
             assertEquals("{1=2}", deserialized.regularMap.toString());
         }
-
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)

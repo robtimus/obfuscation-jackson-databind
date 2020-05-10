@@ -95,6 +95,7 @@
     <version.plugin.site>3.7.1</version.plugin.site>
     <version.plugin.source>3.1.0</version.plugin.source>
     <version.plugin.surefire>2.22.2</version.plugin.surefire>
+    <version.plugin.templating>1.0.0</version.plugin.templating>
   </properties>
 
   <dependencies>
@@ -213,6 +214,19 @@
           <source>${version.java}</source>
           <target>${version.java}</target>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <version>${version.plugin.templating}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>

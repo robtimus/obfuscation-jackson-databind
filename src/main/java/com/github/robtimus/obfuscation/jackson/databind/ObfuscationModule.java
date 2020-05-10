@@ -1,5 +1,5 @@
 /*
- * ObfuscatedModule.java
+ * ObfuscationModule.java
  * Copyright 2020 Rob Spoor
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,13 +28,13 @@ import com.github.robtimus.obfuscation.Obfuscator;
  *
  * @author Rob Spoor
  */
-public final class ObfuscatedModule extends Module {
+public final class ObfuscationModule extends Module {
 
-    private static final ObfuscatedModule DEFAULT_MODULE = builder().build();
+    private static final ObfuscationModule DEFAULT_MODULE = builder().build();
 
     private final Obfuscator defaultObfuscator;
 
-    private ObfuscatedModule(Builder builder) {
+    private ObfuscationModule(Builder builder) {
         defaultObfuscator = builder.defaultObfuscator;
     }
 
@@ -59,7 +59,7 @@ public final class ObfuscatedModule extends Module {
      *
      * @return A module with all settings set to default.
      */
-    public static ObfuscatedModule defaultModule() {
+    public static ObfuscationModule defaultModule() {
         return DEFAULT_MODULE;
     }
 
@@ -73,7 +73,7 @@ public final class ObfuscatedModule extends Module {
     }
 
     /**
-     * A builder for {@link ObfuscatedModule ObfuscatedModules}.
+     * A builder for {@link ObfuscationModule ObfuscatedModules}.
      *
      * @author Rob Spoor
      */
@@ -100,12 +100,12 @@ public final class ObfuscatedModule extends Module {
         }
 
         /**
-         * Creates a new {@link ObfuscatedModule} with the current settings of this builder.
+         * Creates a new {@link ObfuscationModule} with the current settings of this builder.
          *
-         * @return The created {@link ObfuscatedModule}.
+         * @return The created {@link ObfuscationModule}.
          */
-        public ObfuscatedModule build() {
-            return new ObfuscatedModule(this);
+        public ObfuscationModule build() {
+            return new ObfuscationModule(this);
         }
     }
 }
