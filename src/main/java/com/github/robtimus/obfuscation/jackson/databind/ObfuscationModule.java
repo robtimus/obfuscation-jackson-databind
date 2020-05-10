@@ -20,11 +20,10 @@ package com.github.robtimus.obfuscation.jackson.databind;
 import java.util.Objects;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
-import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 
 /**
- * A module that adds support for {@link Obfuscated}.
+ * A module that adds support for serializing and deserializing obfuscated values.
  *
  * @author Rob Spoor
  */
@@ -73,7 +72,7 @@ public final class ObfuscationModule extends Module {
     }
 
     /**
-     * A builder for {@link ObfuscationModule ObfuscatedModules}.
+     * A builder for {@link ObfuscationModule ObfuscationModules}.
      *
      * @author Rob Spoor
      */
