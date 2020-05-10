@@ -17,16 +17,21 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerBuilder;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
+import com.github.robtimus.obfuscation.annotation.ObfuscatorFactory;
 
 final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier {
 
@@ -42,14 +47,60 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
         Map<String, SettableBeanProperty> propertyReplacements = new LinkedHashMap<>();
         for (Iterator<SettableBeanProperty> i = updatedBuilder.getProperties(); i.hasNext(); ) {
             SettableBeanProperty property = i.next();
-            if (property.getType().getRawClass() == Obfuscated.class) {
-                property = property.withValueDeserializer(new ObfuscatedDeserializer(property, property.getValueDeserializer(), defaultObfuscator));
-                propertyReplacements.put(property.getName(), property);
+            Class<?> rawPropertyType = property.getType().getRawClass();
+
+            // These if-statements check for exact interface declarations, so the obfuscating replacement will have a compatible type
+
+            if (rawPropertyType == Obfuscated.class) {
+                JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+                Obfuscator obfuscator = ObfuscatorFactory.createObfuscator(property::getAnnotation)
+                        .orElse(defaultObfuscator);
+                JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForObfuscated(property, deserializer, obfuscator);
+                replaceProperty(property, newDeserializer, propertyReplacements);
+
+            } else if (rawPropertyType == List.class) {
+                ObfuscatorFactory.createObfuscator(property::getAnnotation)
+                        .ifPresent(obfuscator -> {
+                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForList(property, deserializer, obfuscator);
+                            replaceProperty(property, newDeserializer, propertyReplacements);
+                        });
+
+            } else if (rawPropertyType == Set.class) {
+                ObfuscatorFactory.createObfuscator(property::getAnnotation)
+                        .ifPresent(obfuscator -> {
+                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForSet(property, deserializer, obfuscator);
+                            replaceProperty(property, newDeserializer, propertyReplacements);
+                        });
+
+            } else if (rawPropertyType == Collection.class) {
+                ObfuscatorFactory.createObfuscator(property::getAnnotation)
+                        .ifPresent(obfuscator -> {
+                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForCollection(property, deserializer, obfuscator);
+                            replaceProperty(property, newDeserializer, propertyReplacements);
+                        });
+
+            } else if (rawPropertyType == Map.class) {
+                ObfuscatorFactory.createObfuscator(property::getAnnotation)
+                        .ifPresent(obfuscator -> {
+                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForMap(property, deserializer, obfuscator);
+                            replaceProperty(property, newDeserializer, propertyReplacements);
+                        });
             }
         }
         for (SettableBeanProperty property : propertyReplacements.values()) {
             updatedBuilder.addOrReplaceProperty(property, true);
         }
         return updatedBuilder;
+    }
+
+    private void replaceProperty(SettableBeanProperty property, JsonDeserializer<Object> newDeserializer,
+            Map<String, SettableBeanProperty> propertyReplacements) {
+
+        SettableBeanProperty replacement = property.withValueDeserializer(newDeserializer);
+        propertyReplacements.put(property.getName(), replacement);
     }
 }

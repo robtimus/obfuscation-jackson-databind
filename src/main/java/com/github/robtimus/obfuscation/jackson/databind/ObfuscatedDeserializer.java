@@ -18,40 +18,32 @@
 package com.github.robtimus.obfuscation.jackson.databind;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.github.robtimus.obfuscation.Obfuscator;
-import com.github.robtimus.obfuscation.annotation.ObfuscatorFactory;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
 import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
 
-final class ObfuscatedDeserializer extends JsonDeserializer<Object> {
+abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
-    private final BeanProperty property;
+    final BeanProperty property;
     private final JsonDeserializer<Object> deserializer;
     private final JavaType valueType;
-    private final Obfuscator obfuscator;
-    private final StringRepresentationProvider representationProvider;
+    final Obfuscator obfuscator;
 
-    ObfuscatedDeserializer(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+    ObfuscatedDeserializer(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator) {
         this.property = property;
         this.deserializer = serializer;
+        this.obfuscator = obfuscator;
 
-        // property.getType() is Obfuscated<T>, so returns gets T
-        valueType = property.getType().getBindings().getTypeParameters().get(0);
-        obfuscator = ObfuscatorFactory.createObfuscator(property::getAnnotation)
-                .orElse(defaultObfuscator);
-        representationProvider = getRepresentationProvider();
-    }
-
-    private StringRepresentationProvider getRepresentationProvider() {
-        RepresentedBy representedBy = property.getAnnotation(RepresentedBy.class);
-        return representedBy != null
-                ? StringRepresentationProvider.createInstance(representedBy.value())
-                : StringRepresentationProvider.ToString.INSTANCE;
+        valueType = extractJavaType();
     }
 
     @Override
@@ -61,8 +53,106 @@ final class ObfuscatedDeserializer extends JsonDeserializer<Object> {
                 : ctxt.findContextualValueDeserializer(valueType, property);
 
         Object value = actualDeserializer.deserialize(p, ctxt);
-        return value != null
-                ? obfuscator.obfuscateObject(value, representationProvider.stringRepresentation(value))
-                : null;
+        return obfuscateValue(value);
+    }
+
+    abstract JavaType extractJavaType();
+
+    abstract Object obfuscateValue(Object value);
+
+    static final class ForObfuscated extends ObfuscatedDeserializer {
+
+        private final StringRepresentationProvider representationProvider;
+
+        ForObfuscated(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+            super(property, serializer, defaultObfuscator);
+            representationProvider = getRepresentationProvider();
+        }
+
+        private StringRepresentationProvider getRepresentationProvider() {
+            RepresentedBy representedBy = property.getAnnotation(RepresentedBy.class);
+            return representedBy != null
+                    ? StringRepresentationProvider.createInstance(representedBy.value())
+                    : StringRepresentationProvider.ToString.INSTANCE;
+        }
+
+        @Override
+        JavaType extractJavaType() {
+            // property.getType() is Obfuscated<T>, so this returns the actual T
+            return property.getType().getBindings().getTypeParameters().get(0);
+        }
+
+        @Override
+        Object obfuscateValue(Object value) {
+            return obfuscator.obfuscateObject(value, representationProvider.stringRepresentation(value));
+        }
+    }
+
+    static final class ForList extends ObfuscatedDeserializer {
+
+        ForList(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+            super(property, serializer, defaultObfuscator);
+        }
+
+        @Override
+        JavaType extractJavaType() {
+            return property.getType();
+        }
+
+        @Override
+        Object obfuscateValue(Object value) {
+            return obfuscator.obfuscateList((List<?>) value);
+        }
+    }
+
+    static final class ForSet extends ObfuscatedDeserializer {
+
+        ForSet(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+            super(property, serializer, defaultObfuscator);
+        }
+
+        @Override
+        JavaType extractJavaType() {
+            return property.getType();
+        }
+
+        @Override
+        Object obfuscateValue(Object value) {
+            return obfuscator.obfuscateSet((Set<?>) value);
+        }
+    }
+
+    static final class ForCollection extends ObfuscatedDeserializer {
+
+        ForCollection(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+            super(property, serializer, defaultObfuscator);
+        }
+
+        @Override
+        JavaType extractJavaType() {
+            return property.getType();
+        }
+
+        @Override
+        Object obfuscateValue(Object value) {
+            return obfuscator.obfuscateCollection((Collection<?>) value);
+        }
+    }
+
+    static final class ForMap extends ObfuscatedDeserializer {
+
+        ForMap(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
+            super(property, serializer, defaultObfuscator);
+        }
+
+        @Override
+        JavaType extractJavaType() {
+            return property.getType();
+        }
+
+        @Override
+        Object obfuscateValue(Object value) {
+            return obfuscator.obfuscateMap((Map<?, ?>) value);
+        }
     }
 }

@@ -24,11 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -73,32 +80,133 @@ public class ObfuscatedTest {
         mapper.writeValue(writer, original);
 
         String json = writer.toString();
+        assertThat(json, containsString("\"nullValue\":null"));
+        assertThat(json, containsString("\"stringValue\":\"foo\""));
         assertThat(json, containsString("\"dateValue\":\"2020-05-07T12:30:55.123+0000\""));
         assertThat(json, containsString("\"intArray\":[1,2,3]"));
-        assertThat(json, containsString("\"stringValue\":\"foo\""));
         assertThat(json, containsString("\"nestedClass\":{\"intValue\":13}"));
         assertThat(json, containsString("\"cws\":1"));
+        assertThat(json, containsString("\"obfuscatedList\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"regularList\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"obfuscatedSet\":[\"foo\"]"));
+        assertThat(json, containsString("\"regularSet\":[\"foo\"]"));
+        assertThat(json, containsString("\"obfuscatedCollection\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"regularCollection\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"obfuscatedMap\":{\"1\":2}"));
+        assertThat(json, containsString("\"regularMap\":{\"1\":2}"));
+    }
 
-        TestClass deserialized = mapper.readValue(json, TestClass.class);
+    @Nested
+    @DisplayName("deserialize")
+    public class Deserialize {
 
-        assertEquals(original.stringValue, deserialized.stringValue);
-        assertEquals(original.dateValue, deserialized.dateValue);
-        assertNotNull(deserialized.intArray);
-        assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
-        assertNotNull(deserialized.nestedClass);
-        assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
-        assertNotNull(deserialized.classWithSerializer);
-        assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
+        @Test
+        @DisplayName("with default module")
+        public void testWithDefaultModule() throws IOException {
+            Module module = ObfuscatedModule.defaultModule();
 
-        assertEquals("<string>", deserialized.stringValue.toString());
-        assertEquals("***", deserialized.dateValue.toString());
-        assertEquals("[***]", deserialized.intArray.toString());
-        assertEquals("<<13>>", deserialized.nestedClass.toString());
-        assertEquals("********", deserialized.classWithSerializer.toString());
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module);
+
+            TestClass original = new TestClass();
+
+            StringWriter writer = new StringWriter();
+            mapper.writeValue(writer, original);
+
+            String json = writer.toString();
+
+            TestClass deserialized = mapper.readValue(json, TestClass.class);
+
+            assertEquals(original.stringValue, deserialized.stringValue);
+            assertEquals(original.dateValue, deserialized.dateValue);
+            assertNotNull(deserialized.intArray);
+            assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
+            assertNotNull(deserialized.nestedClass);
+            assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
+            assertNotNull(deserialized.classWithSerializer);
+            assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
+            assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+            assertEquals(original.regularList, deserialized.regularList);
+            assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+            assertEquals(original.regularSet, deserialized.regularSet);
+            assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+            assertEquals(original.regularCollection, deserialized.regularCollection);
+            assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+            assertEquals(original.regularMap, deserialized.regularMap);
+
+            assertEquals("<string>", deserialized.stringValue.toString());
+            assertEquals("***", deserialized.dateValue.toString());
+            assertEquals("[***]", deserialized.intArray.toString());
+            assertEquals("<<13>>", deserialized.nestedClass.toString());
+            assertEquals("********", deserialized.classWithSerializer.toString());
+            assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+            assertEquals("[foo, bar]", deserialized.regularList.toString());
+            assertEquals("[********]", deserialized.obfuscatedSet.toString());
+            assertEquals("[foo]", deserialized.regularSet.toString());
+            assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+            assertEquals("[foo, bar]", deserialized.regularCollection.toString());
+            assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+            assertEquals("{1=2}", deserialized.regularMap.toString());
+        }
+
+        @Test
+        @DisplayName("with custom module")
+        public void testWithCustomModule() throws IOException {
+            Module module = ObfuscatedModule.builder()
+                    .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
+                    .build();
+
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module);
+
+            TestClass original = new TestClass();
+
+            StringWriter writer = new StringWriter();
+            mapper.writeValue(writer, original);
+
+            String json = writer.toString();
+
+            TestClass deserialized = mapper.readValue(json, TestClass.class);
+
+            assertEquals(original.stringValue, deserialized.stringValue);
+            assertEquals(original.dateValue, deserialized.dateValue);
+            assertNotNull(deserialized.intArray);
+            assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
+            assertNotNull(deserialized.nestedClass);
+            assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
+            assertNotNull(deserialized.classWithSerializer);
+            assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
+            assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+            assertEquals(original.regularList, deserialized.regularList);
+            assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+            assertEquals(original.regularSet, deserialized.regularSet);
+            assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+            assertEquals(original.regularCollection, deserialized.regularCollection);
+            assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+            assertEquals(original.regularMap, deserialized.regularMap);
+
+            assertEquals("<string>", deserialized.stringValue.toString());
+            assertEquals("<default>", deserialized.dateValue.toString());
+            assertEquals("[***]", deserialized.intArray.toString());
+            assertEquals("<<13>>", deserialized.nestedClass.toString());
+            assertEquals("********", deserialized.classWithSerializer.toString());
+            assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+            assertEquals("[foo, bar]", deserialized.regularList.toString());
+            assertEquals("[********]", deserialized.obfuscatedSet.toString());
+            assertEquals("[foo]", deserialized.regularSet.toString());
+            assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+            assertEquals("[foo, bar]", deserialized.regularCollection.toString());
+            assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+            assertEquals("{1=2}", deserialized.regularMap.toString());
+        }
+
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
     private static final class TestClass {
+
+        @ObfuscateFixedValue("<null>")
+        private Obfuscated<String> nullValue = null;
 
         @ObfuscateFixedValue("<string>")
         private Obfuscated<String> stringValue = Obfuscator.all().obfuscateObject("foo");
@@ -120,6 +228,26 @@ public class ObfuscatedTest {
         @RepresentedBy(CustomStringRepresentationProvider.class)
         @JsonProperty("cws")
         private Obfuscated<ClassWithSerializer> classWithSerializer = Obfuscator.all().obfuscateObject(new ClassWithSerializer(1));
+
+        @ObfuscateFixedLength(8)
+        private List<String> obfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
+        private List<String> regularList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
+        @ObfuscateFixedLength(8)
+        private Set<String> obfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+
+        private Set<String> regularSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+
+        @ObfuscateFixedLength(5)
+        private Collection<String> obfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
+        private Collection<String> regularCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
+        @ObfuscateFixedLength(6)
+        private Map<Integer, Integer> obfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+
+        private Map<Integer, Integer> regularMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
 
         private Date calculateDate() {
             Calendar calendar = Calendar.getInstance();

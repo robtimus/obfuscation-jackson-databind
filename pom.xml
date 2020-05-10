@@ -76,7 +76,7 @@
     <version.jackson.javadoc>2.11</version.jackson.javadoc>
     <version.junit>5.6.2</version.junit>
     <version.mockito>3.3.3</version.mockito>
-    <version.obfuscation-core>1.2-SNAPSHOT</version.obfuscation-core>
+    <version.obfuscation-annotations>1.0-SNAPSHOT</version.obfuscation-annotations>
 <!--     <version.slf4j>1.7.30</version.slf4j> -->
 
     <version.plugin.antrun>1.8</version.plugin.antrun>
@@ -102,8 +102,8 @@
   <dependencies>
     <dependency>
       <groupId>com.github.robtimus</groupId>
-      <artifactId>obfuscation-core</artifactId>
-      <version>${version.obfuscation-core}</version>
+      <artifactId>obfuscation-annotations</artifactId>
+      <version>${version.obfuscation-annotations}</version>
     </dependency>
 
     <dependency>
