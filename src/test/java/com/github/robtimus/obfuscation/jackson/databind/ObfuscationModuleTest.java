@@ -301,7 +301,7 @@ public class ObfuscationModuleTest {
         }
     }
 
-    public static final class CustomStringRepresentationProvider extends StringRepresentationProvider.ForValueType<NestedClass> {
+    public static final class CustomStringRepresentationProvider extends StringRepresentationProvider.TypeSpecific<NestedClass> {
 
         public CustomStringRepresentationProvider() {
             super(NestedClass.class);
