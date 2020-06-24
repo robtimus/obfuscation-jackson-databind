@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,15 +59,14 @@ import com.github.robtimus.obfuscation.annotation.ObfuscateFixedValue;
 import com.github.robtimus.obfuscation.annotation.ObfuscateNone;
 import com.github.robtimus.obfuscation.annotation.ObfuscatePortion;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
 import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider.IntArrayToString;
 
-@SuppressWarnings({ "javadoc", "nls" })
-public class ObfuscationModuleTest {
+@SuppressWarnings("nls")
+class ObfuscationModuleTest {
 
     @Test
     @DisplayName("serialize")
-    public void testSerialize() throws IOException {
+    void testSerialize() throws IOException {
         Module module = ObfuscationModule.defaultModule();
 
         ObjectMapper mapper = new ObjectMapper()
@@ -98,11 +96,11 @@ public class ObfuscationModuleTest {
 
     @Nested
     @DisplayName("deserialize")
-    public class Deserialize {
+    class Deserialize {
 
         @Test
         @DisplayName("with default module")
-        public void testWithDefaultModule() throws IOException {
+        void testWithDefaultModule() throws IOException {
             Module module = ObfuscationModule.defaultModule();
 
             ObjectMapper mapper = new ObjectMapper()
@@ -151,7 +149,7 @@ public class ObfuscationModuleTest {
 
         @Test
         @DisplayName("with custom module")
-        public void testWithCustomModule() throws IOException {
+        void testWithCustomModule() throws IOException {
             Module module = ObfuscationModule.builder()
                     .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
                     .build();
@@ -263,9 +261,9 @@ public class ObfuscationModuleTest {
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static final class NestedClass {
+    static final class NestedClass {
 
-        private int intValue = 13;
+        int intValue = 13;
     }
 
     @JsonSerialize(using = CustomSerializer.class)
@@ -298,18 +296,6 @@ public class ObfuscationModuleTest {
         public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
             int intValue = p.getValueAsInt();
             return new ClassWithSerializer(intValue);
-        }
-    }
-
-    public static final class CustomStringRepresentationProvider extends StringRepresentationProvider.TypeSpecific<NestedClass> {
-
-        public CustomStringRepresentationProvider() {
-            super(NestedClass.class);
-        }
-
-        @Override
-        protected Supplier<? extends CharSequence> typeSpecificStringRepresentation(NestedClass value) {
-            return () -> "<<" + value.intValue + ">>";
         }
     }
 }

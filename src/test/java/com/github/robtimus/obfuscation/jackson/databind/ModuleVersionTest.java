@@ -23,12 +23,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.core.Version;
 
-@SuppressWarnings({ "javadoc", "nls" })
-public class ModuleVersionTest {
+@SuppressWarnings("nls")
+class ModuleVersionTest {
 
     @Test
     @DisplayName("VERSION")
-    public void testVersion() {
+    void testVersion() {
         Version version = ModuleVersion.VERSION;
 
         assertNotEquals(Version.unknownVersion(), version);
