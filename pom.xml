@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.github.robtimus</groupId>
     <artifactId>robtimus-parent</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
     <relativePath />
   </parent>
 
@@ -62,7 +62,7 @@
   </issueManagement>
 
   <properties>
-    <version.jackson>2.11.0</version.jackson>
+    <version.jackson>2.11.1</version.jackson>
     <version.jackson.javadoc>2.11</version.jackson.javadoc>
     <version.obfuscation-annotations>1.0.1</version.obfuscation-annotations>
   </properties>
@@ -165,6 +165,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
 
       <plugin>
