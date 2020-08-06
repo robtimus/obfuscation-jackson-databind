@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.github.robtimus</groupId>
     <artifactId>robtimus-parent</artifactId>
-    <version>1.1</version>
+    <version>1.1.2</version>
     <relativePath />
   </parent>
 
@@ -62,9 +62,9 @@
   </issueManagement>
 
   <properties>
-    <version.jackson>2.11.1</version.jackson>
+    <version.jackson>2.11.2</version.jackson>
     <version.jackson.javadoc>2.11</version.jackson.javadoc>
-    <version.obfuscation-annotations>1.0.1</version.obfuscation-annotations>
+    <version.obfuscation-annotations>1.1</version.obfuscation-annotations>
   </properties>
 
   <dependencies>
