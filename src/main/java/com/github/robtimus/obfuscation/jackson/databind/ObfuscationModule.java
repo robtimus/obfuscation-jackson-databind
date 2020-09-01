@@ -18,6 +18,7 @@
 package com.github.robtimus.obfuscation.jackson.databind;
 
 import java.util.Objects;
+import java.util.function.Function;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
 import com.github.robtimus.obfuscation.Obfuscator;
@@ -32,9 +33,11 @@ public final class ObfuscationModule extends Module {
     private static final ObfuscationModule DEFAULT_MODULE = builder().build();
 
     private final Obfuscator defaultObfuscator;
+    private final Function<Object, ? extends CharSequence> defaultStringRepresentation;
 
     private ObfuscationModule(Builder builder) {
         defaultObfuscator = builder.defaultObfuscator;
+        defaultStringRepresentation = builder.defaultStringRepresentation;
     }
 
     @Override
@@ -50,7 +53,7 @@ public final class ObfuscationModule extends Module {
     @Override
     public void setupModule(SetupContext context) {
         context.addBeanSerializerModifier(new ObfuscatedBeanSerializerModifier());
-        context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(defaultObfuscator));
+        context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(defaultObfuscator, defaultStringRepresentation));
     }
 
     /**
@@ -79,8 +82,10 @@ public final class ObfuscationModule extends Module {
     public static final class Builder {
 
         private static final Obfuscator DEFAULT_OBFUSCATOR = Obfuscator.fixedLength(3);
+        private static final Function<Object, ? extends CharSequence> DEFAULT_STRING_REPRESENTATION = Object::toString;
 
         private Obfuscator defaultObfuscator = DEFAULT_OBFUSCATOR;
+        private Function<Object, ? extends CharSequence> defaultStringRepresentation = DEFAULT_STRING_REPRESENTATION;
 
         private Builder() {
             super();
@@ -95,6 +100,19 @@ public final class ObfuscationModule extends Module {
          */
         public Builder withDefaultObfuscator(Obfuscator defaultObfuscator) {
             this.defaultObfuscator = Objects.requireNonNull(defaultObfuscator);
+            return this;
+        }
+
+        /**
+         * Sets the default string representation to use, in case no string representation could be found from annotations.
+         * The default is {@link Object#toString()}.
+         *
+         * @param defaultStringRepresentation The default string representation to use.
+         * @return This object.
+         * @since 1.1
+         */
+        public Builder withDefaultStringRepresentation(Function<Object, ? extends CharSequence> defaultStringRepresentation) {
+            this.defaultStringRepresentation = Objects.requireNonNull(defaultStringRepresentation);
             return this;
         }
 

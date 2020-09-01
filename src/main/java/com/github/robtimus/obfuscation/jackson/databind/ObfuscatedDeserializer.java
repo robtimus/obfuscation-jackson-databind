@@ -29,8 +29,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.github.robtimus.obfuscation.Obfuscator;
-import com.github.robtimus.obfuscation.annotation.RepresentedBy;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
 
 abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
@@ -38,22 +36,17 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
     private final JsonDeserializer<Object> deserializer;
     private final JavaType valueType;
     final Obfuscator obfuscator;
-    final StringRepresentationProvider representationProvider;
+    final Function<Object, ? extends CharSequence> stringRepresentation;
 
-    ObfuscatedDeserializer(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator) {
+    ObfuscatedDeserializer(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+            Function<Object, ? extends CharSequence> stringRepresentation) {
+
         this.property = property;
         this.deserializer = serializer;
         this.obfuscator = obfuscator;
-        representationProvider = getRepresentationProvider();
+        this.stringRepresentation = stringRepresentation;
 
         valueType = extractJavaType();
-    }
-
-    private StringRepresentationProvider getRepresentationProvider() {
-        RepresentedBy representedBy = property.getAnnotation(RepresentedBy.class);
-        return representedBy != null
-                ? StringRepresentationProvider.createInstance(representedBy.value())
-                : StringRepresentationProvider.ToString.INSTANCE;
     }
 
     @Override
@@ -72,8 +65,10 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForObfuscated extends ObfuscatedDeserializer {
 
-        ForObfuscated(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
-            super(property, serializer, defaultObfuscator);
+        ForObfuscated(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+                Function<Object, ? extends CharSequence> stringRepresentation) {
+
+            super(property, serializer, obfuscator, stringRepresentation);
         }
 
         @Override
@@ -84,14 +79,16 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
         @Override
         Object obfuscateValue(Object value) {
-            return obfuscator.obfuscateObject(value, representationProvider.stringRepresentation(value));
+            return obfuscator.obfuscateObject(value, () -> stringRepresentation.apply(value));
         }
     }
 
     static final class ForList extends ObfuscatedDeserializer {
 
-        ForList(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
-            super(property, serializer, defaultObfuscator);
+        ForList(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+                Function<Object, ? extends CharSequence> stringRepresentation) {
+
+            super(property, serializer, obfuscator, stringRepresentation);
         }
 
         @Override
@@ -101,15 +98,16 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
         @Override
         Object obfuscateValue(Object value) {
-            Function<Object, ? extends CharSequence> elementRepresentation = representationProvider.stringRepresentation();
-            return obfuscator.obfuscateList((List<?>) value, elementRepresentation);
+            return obfuscator.obfuscateList((List<?>) value, stringRepresentation);
         }
     }
 
     static final class ForSet extends ObfuscatedDeserializer {
 
-        ForSet(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
-            super(property, serializer, defaultObfuscator);
+        ForSet(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+                Function<Object, ? extends CharSequence> stringRepresentation) {
+
+            super(property, serializer, obfuscator, stringRepresentation);
         }
 
         @Override
@@ -119,15 +117,16 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
         @Override
         Object obfuscateValue(Object value) {
-            Function<Object, ? extends CharSequence> elementRepresentation = representationProvider.stringRepresentation();
-            return obfuscator.obfuscateSet((Set<?>) value, elementRepresentation);
+            return obfuscator.obfuscateSet((Set<?>) value, stringRepresentation);
         }
     }
 
     static final class ForCollection extends ObfuscatedDeserializer {
 
-        ForCollection(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
-            super(property, serializer, defaultObfuscator);
+        ForCollection(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+                Function<Object, ? extends CharSequence> stringRepresentation) {
+
+            super(property, serializer, obfuscator, stringRepresentation);
         }
 
         @Override
@@ -137,15 +136,16 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
         @Override
         Object obfuscateValue(Object value) {
-            Function<Object, ? extends CharSequence> elementRepresentation = representationProvider.stringRepresentation();
-            return obfuscator.obfuscateCollection((Collection<?>) value, elementRepresentation);
+            return obfuscator.obfuscateCollection((Collection<?>) value, stringRepresentation);
         }
     }
 
     static final class ForMap extends ObfuscatedDeserializer {
 
-        ForMap(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator defaultObfuscator) {
-            super(property, serializer, defaultObfuscator);
+        ForMap(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+                Function<Object, ? extends CharSequence> stringRepresentation) {
+
+            super(property, serializer, obfuscator, stringRepresentation);
         }
 
         @Override
@@ -155,8 +155,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
         @Override
         Object obfuscateValue(Object value) {
-            Function<Object, ? extends CharSequence> valueRepresentation = representationProvider.stringRepresentation();
-            return obfuscator.obfuscateMap((Map<?, ?>) value, valueRepresentation);
+            return obfuscator.obfuscateMap((Map<?, ?>) value, stringRepresentation);
         }
     }
 }
