@@ -17,6 +17,7 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -24,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
@@ -47,6 +50,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -70,7 +74,8 @@ class ObfuscationModuleTest {
         Module module = ObfuscationModule.defaultModule();
 
         ObjectMapper mapper = new ObjectMapper()
-                .registerModule(module);
+                .registerModule(module)
+                .enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         TestClass original = new TestClass();
 
@@ -85,13 +90,18 @@ class ObfuscationModuleTest {
         assertThat(json, containsString("\"nestedClass\":{\"intValue\":13}"));
         assertThat(json, containsString("\"cws\":1"));
         assertThat(json, containsString("\"obfuscatedList\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"upperCaseObfuscatedList\":[\"foo\",\"bar\"]"));
         assertThat(json, containsString("\"regularList\":[\"foo\",\"bar\"]"));
         assertThat(json, containsString("\"obfuscatedSet\":[\"foo\"]"));
+        assertThat(json, containsString("\"upperCaseObfuscatedSet\":[\"foo\"]"));
         assertThat(json, containsString("\"regularSet\":[\"foo\"]"));
         assertThat(json, containsString("\"obfuscatedCollection\":[\"foo\",\"bar\"]"));
+        assertThat(json, containsString("\"upperCaseObfuscatedCollection\":[\"foo\",\"bar\"]"));
         assertThat(json, containsString("\"regularCollection\":[\"foo\",\"bar\"]"));
         assertThat(json, containsString("\"obfuscatedMap\":{\"1\":2}"));
+        assertThat(json, containsString("\"negateValueObfuscatedMap\":{\"1\":2}"));
         assertThat(json, containsString("\"regularMap\":{\"1\":2}"));
+        assertThat(json, containsString("\"obfuscatedDateList\":[1588854655123]"));
     }
 
     @Nested
@@ -124,13 +134,18 @@ class ObfuscationModuleTest {
             assertNotNull(deserialized.classWithSerializer);
             assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
             assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+            assertEquals(original.upperCaseObfuscatedList, deserialized.upperCaseObfuscatedList);
             assertEquals(original.regularList, deserialized.regularList);
             assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+            assertEquals(original.upperCaseObfuscatedSet, deserialized.upperCaseObfuscatedSet);
             assertEquals(original.regularSet, deserialized.regularSet);
             assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+            assertEquals(original.upperCaseObfuscatedCollection, deserialized.upperCaseObfuscatedCollection);
             assertEquals(original.regularCollection, deserialized.regularCollection);
             assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+            assertEquals(original.negateValueObfuscatedMap, deserialized.negateValueObfuscatedMap);
             assertEquals(original.regularMap, deserialized.regularMap);
+            assertEquals(toLocalDates(original.obfuscatedDateList), toLocalDates(deserialized.obfuscatedDateList));
 
             assertEquals("<string>", deserialized.stringValue.toString());
             assertEquals("***", deserialized.dateValue.toString());
@@ -138,13 +153,18 @@ class ObfuscationModuleTest {
             assertEquals("<<13>>", deserialized.nestedClass.toString());
             assertEquals("********", deserialized.classWithSerializer.toString());
             assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+            assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedList.toString());
             assertEquals("[foo, bar]", deserialized.regularList.toString());
             assertEquals("[********]", deserialized.obfuscatedSet.toString());
+            assertEquals("[F***O]", deserialized.upperCaseObfuscatedSet.toString());
             assertEquals("[foo]", deserialized.regularSet.toString());
             assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+            assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedCollection.toString());
             assertEquals("[foo, bar]", deserialized.regularCollection.toString());
             assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+            assertEquals("{1=-***2}", deserialized.negateValueObfuscatedMap.toString());
             assertEquals("{1=2}", deserialized.regularMap.toString());
+            assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
         }
 
         @Test
@@ -175,13 +195,18 @@ class ObfuscationModuleTest {
             assertNotNull(deserialized.classWithSerializer);
             assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
             assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+            assertEquals(original.upperCaseObfuscatedList, deserialized.upperCaseObfuscatedList);
             assertEquals(original.regularList, deserialized.regularList);
             assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+            assertEquals(original.upperCaseObfuscatedSet, deserialized.upperCaseObfuscatedSet);
             assertEquals(original.regularSet, deserialized.regularSet);
             assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+            assertEquals(original.upperCaseObfuscatedCollection, deserialized.upperCaseObfuscatedCollection);
             assertEquals(original.regularCollection, deserialized.regularCollection);
             assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+            assertEquals(original.negateValueObfuscatedMap, deserialized.negateValueObfuscatedMap);
             assertEquals(original.regularMap, deserialized.regularMap);
+            assertEquals(toLocalDates(original.obfuscatedDateList), toLocalDates(deserialized.obfuscatedDateList));
 
             assertEquals("<string>", deserialized.stringValue.toString());
             assertEquals("<default>", deserialized.dateValue.toString());
@@ -189,13 +214,28 @@ class ObfuscationModuleTest {
             assertEquals("<<13>>", deserialized.nestedClass.toString());
             assertEquals("********", deserialized.classWithSerializer.toString());
             assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+            assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedList.toString());
             assertEquals("[foo, bar]", deserialized.regularList.toString());
             assertEquals("[********]", deserialized.obfuscatedSet.toString());
+            assertEquals("[F***O]", deserialized.upperCaseObfuscatedSet.toString());
             assertEquals("[foo]", deserialized.regularSet.toString());
             assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+            assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedCollection.toString());
             assertEquals("[foo, bar]", deserialized.regularCollection.toString());
             assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+            assertEquals("{1=-***2}", deserialized.negateValueObfuscatedMap.toString());
             assertEquals("{1=2}", deserialized.regularMap.toString());
+            assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
+        }
+
+        private List<LocalDate> toLocalDates(List<Date> dates) {
+            return dates.stream()
+                    .map(this::toLocalDate)
+                    .collect(toList());
+        }
+
+        private LocalDate toLocalDate(Date date) {
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
     }
 
@@ -229,22 +269,42 @@ class ObfuscationModuleTest {
         @ObfuscateFixedLength(8)
         private List<String> obfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
+        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
+        @RepresentedBy(UpperCase.class)
+        private List<String> upperCaseObfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
         private List<String> regularList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscateFixedLength(8)
         private Set<String> obfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+
+        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
+        @RepresentedBy(UpperCase.class)
+        private Set<String> upperCaseObfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
 
         private Set<String> regularSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
 
         @ObfuscateFixedLength(5)
         private Collection<String> obfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
+        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
+        @RepresentedBy(UpperCase.class)
+        private Collection<String> upperCaseObfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+
         private Collection<String> regularCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscateFixedLength(6)
         private Map<Integer, Integer> obfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
 
+        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
+        @RepresentedBy(NegateValueToString.class)
+        private Map<Integer, Integer> negateValueObfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+
         private Map<Integer, Integer> regularMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+
+        @ObfuscatePortion(keepAtStart = 8)
+        @RepresentedBy(DateFormat.class)
+        private List<Date> obfuscatedDateList = Obfuscator.all().obfuscateList(Arrays.asList(calculateDate()));
 
         private Date calculateDate() {
             Calendar calendar = Calendar.getInstance();

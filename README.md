@@ -25,7 +25,7 @@ With the annotations from [obfuscation-annotations](https://robtimus.github.io/o
 
 ### List, Set, Collection and Map
 
-If properties declared as `List`, `Set`, `Collection` and `Map` are annotated with an annotation like `@ObfuscateFixedLength(3)` or `@ObfuscateAll`, they will be obfuscated using the specified obfuscator during deserialization. This is done using [Obfuscator.obfuscateList](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateList-java.util.List-), [Obfuscator.obfuscateSet](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateSet-java.util.Set-), [Obfuscator.obfuscateCollection](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateCollection-java.util.Collection-) and [Obfuscator.obfuscateMap](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateMap-java.util.Map-) respectively.
+If properties declared as `List`, `Set`, `Collection` and `Map` are annotated with an annotation like `@ObfuscateFixedLength(3)` or `@ObfuscateAll`, they will be obfuscated using the specified obfuscator during deserialization. This is done using [Obfuscator.obfuscateList](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateList-java.util.List-java.util.function.Function-), [Obfuscator.obfuscateSet](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateSet-java.util.Set-java.util.function.Function-), [Obfuscator.obfuscateCollection](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateCollection-java.util.Collection-java.util.function.Function-) and [Obfuscator.obfuscateMap](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#obfuscateMap-java.util.Map-java.util.function.Function-) respectively. If the property is annotated with `@RepresentedBy` it will use this custom string representation; otherwise it will use `Object.toString()`.
 
 ## Examples
 
@@ -51,3 +51,10 @@ If properties declared as `List`, `Set`, `Collection` and `Map` are annotated wi
      private List<String> obfuscatedList;
     // Note that the annotation is needed; the following is not obfuscated
     private List<String> regularList;
+
+    // Obfuscate a List using a custom string representation
+    // Assume that DateFormat formats Date objects as yyyy-MM-dd,
+    // then this will obfuscate the days, leaving values like 1970-01-**
+    @ObfuscatePortion(keepAtStart = 8)
+    @RepresentedBy(DateFormat.class)
+    private List<Date> obfuscatedList;
