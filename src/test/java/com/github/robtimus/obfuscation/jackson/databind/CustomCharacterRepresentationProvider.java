@@ -1,5 +1,5 @@
 /*
- * CustomStringRepresentationProvider.java
+ * CustomCharacterRepresentationProvider.java
  * Copyright 2020 Rob Spoor
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,20 +17,19 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import java.util.function.Supplier;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 import com.github.robtimus.obfuscation.jackson.databind.ObfuscationModuleTest.NestedClass;
 
 // This class needs to be public so it can be instantiated
 @SuppressWarnings({ "javadoc", "nls" })
-public final class CustomStringRepresentationProvider extends StringRepresentationProvider.TypeSpecific<NestedClass> {
+public final class CustomCharacterRepresentationProvider extends CharacterRepresentationProvider.TypeSpecific<NestedClass> {
 
-    public CustomStringRepresentationProvider() {
+    public CustomCharacterRepresentationProvider() {
         super(NestedClass.class);
     }
 
     @Override
-    protected Supplier<? extends CharSequence> typeSpecificStringRepresentation(NestedClass value) {
-        return () -> "<<" + value.intValue + ">>";
+    protected CharSequence convert(NestedClass value) {
+        return "<<" + value.intValue + ">>";
     }
 }

@@ -58,12 +58,12 @@ import com.fasterxml.jackson.databind.deser.std.DateDeserializers.DateDeserializ
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.IntArrayToString;
 import com.github.robtimus.obfuscation.annotation.ObfuscateFixedLength;
 import com.github.robtimus.obfuscation.annotation.ObfuscateFixedValue;
 import com.github.robtimus.obfuscation.annotation.ObfuscateNone;
 import com.github.robtimus.obfuscation.annotation.ObfuscatePortion;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider.IntArrayToString;
 
 @SuppressWarnings("nls")
 class ObfuscationModuleTest {
@@ -231,68 +231,6 @@ class ObfuscationModuleTest {
                 assertEquals("{1=2}", deserialized.regularMap.toString());
                 assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
             }
-
-            @Test
-            @DisplayName("with custom default string representation")
-            void testWithCustomDefaultStringRepresentation() throws IOException {
-                Module module = ObfuscationModule.builder()
-                        .withDefaultObfuscator(Obfuscator.none())
-                        .withDefaultStringRepresentation(t -> "hello")
-                        .build();
-
-                ObjectMapper mapper = new ObjectMapper()
-                        .registerModule(module);
-
-                TestClass original = new TestClass();
-
-                StringWriter writer = new StringWriter();
-                mapper.writeValue(writer, original);
-
-                String json = writer.toString();
-
-                TestClass deserialized = mapper.readValue(json, TestClass.class);
-
-                assertEquals(original.stringValue, deserialized.stringValue);
-                assertEquals(original.dateValue, deserialized.dateValue);
-                assertNotNull(deserialized.intArray);
-                assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
-                assertNotNull(deserialized.nestedClass);
-                assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
-                assertNotNull(deserialized.classWithSerializer);
-                assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
-                assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
-                assertEquals(original.upperCaseObfuscatedList, deserialized.upperCaseObfuscatedList);
-                assertEquals(original.regularList, deserialized.regularList);
-                assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
-                assertEquals(original.upperCaseObfuscatedSet, deserialized.upperCaseObfuscatedSet);
-                assertEquals(original.regularSet, deserialized.regularSet);
-                assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
-                assertEquals(original.upperCaseObfuscatedCollection, deserialized.upperCaseObfuscatedCollection);
-                assertEquals(original.regularCollection, deserialized.regularCollection);
-                assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
-                assertEquals(original.negateValueObfuscatedMap, deserialized.negateValueObfuscatedMap);
-                assertEquals(original.regularMap, deserialized.regularMap);
-                assertEquals(toLocalDates(original.obfuscatedDateList), toLocalDates(deserialized.obfuscatedDateList));
-
-                assertEquals("<string>", deserialized.stringValue.toString());
-                assertEquals("hello", deserialized.dateValue.toString());
-                assertEquals("[***]", deserialized.intArray.toString());
-                assertEquals("<<13>>", deserialized.nestedClass.toString());
-                assertEquals("********", deserialized.classWithSerializer.toString());
-                assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
-                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedList.toString());
-                assertEquals("[foo, bar]", deserialized.regularList.toString());
-                assertEquals("[********]", deserialized.obfuscatedSet.toString());
-                assertEquals("[F***O]", deserialized.upperCaseObfuscatedSet.toString());
-                assertEquals("[foo]", deserialized.regularSet.toString());
-                assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
-                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedCollection.toString());
-                assertEquals("[foo, bar]", deserialized.regularCollection.toString());
-                assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
-                assertEquals("{1=-***2}", deserialized.negateValueObfuscatedMap.toString());
-                assertEquals("{1=2}", deserialized.regularMap.toString());
-                assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
-            }
         }
 
         private List<LocalDate> toLocalDates(List<Date> dates) {
@@ -320,16 +258,16 @@ class ObfuscationModuleTest {
         @JsonDeserialize(using = DateDeserializer.class)
         private Obfuscated<Date> dateValue = Obfuscator.all().obfuscateObject(calculateDate());
 
-        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedLength = 3)
+        @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(IntArrayToString.class)
         private Obfuscated<int[]> intArray = Obfuscator.all().obfuscateObject(new int[] { 1, 2, 3 });
 
         @ObfuscateNone
-        @RepresentedBy(CustomStringRepresentationProvider.class)
+        @RepresentedBy(CustomCharacterRepresentationProvider.class)
         private Obfuscated<NestedClass> nestedClass = Obfuscator.all().obfuscateObject(new NestedClass());
 
         @ObfuscateFixedLength(8)
-        @RepresentedBy(CustomStringRepresentationProvider.class)
+        @RepresentedBy(CustomCharacterRepresentationProvider.class)
         @JsonProperty("cws")
         private Obfuscated<ClassWithSerializer> classWithSerializer = Obfuscator.all().obfuscateObject(new ClassWithSerializer(1));
 

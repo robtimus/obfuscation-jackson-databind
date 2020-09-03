@@ -17,15 +17,14 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import java.util.function.Supplier;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
 // This class needs to be public so it can be instantiated
 @SuppressWarnings("javadoc")
-public final class UpperCase implements StringRepresentationProvider {
+public final class UpperCase implements CharacterRepresentationProvider {
 
     @Override
-    public Supplier<? extends CharSequence> stringRepresentation(Object value) {
-        return () -> value.toString().toUpperCase();
+    public CharSequence toCharSequence(Object value) {
+        return value.toString().toUpperCase();
     }
 }

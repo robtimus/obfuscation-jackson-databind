@@ -19,19 +19,18 @@ package com.github.robtimus.obfuscation.jackson.databind;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.function.Supplier;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
 // This class needs to be public so it can be instantiated
 @SuppressWarnings({ "javadoc", "nls" })
-public final class DateFormat extends StringRepresentationProvider.TypeSpecific<Date> {
+public final class DateFormat extends CharacterRepresentationProvider.TypeSpecific<Date> {
 
     public DateFormat() {
         super(Date.class);
     }
 
     @Override
-    protected Supplier<? extends CharSequence> typeSpecificStringRepresentation(Date value) {
-        return () -> new SimpleDateFormat("yyyy-MM-dd").format(value);
+    protected CharSequence convert(Date value) {
+        return new SimpleDateFormat("yyyy-MM-dd").format(value);
     }
 }

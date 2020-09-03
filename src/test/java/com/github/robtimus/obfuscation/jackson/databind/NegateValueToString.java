@@ -17,19 +17,18 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import java.util.function.Supplier;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
 // This class needs to be public so it can be instantiated
 @SuppressWarnings("javadoc")
-public final class NegateValueToString extends StringRepresentationProvider.TypeSpecific<Integer> {
+public final class NegateValueToString extends CharacterRepresentationProvider.TypeSpecific<Integer> {
 
     public NegateValueToString() {
         super(Integer.class);
     }
 
     @Override
-    protected Supplier<? extends CharSequence> typeSpecificStringRepresentation(Integer value) {
-        return () -> Integer.toString(-value);
+    protected CharSequence convert(Integer value) {
+        return Integer.toString(-value);
     }
 }

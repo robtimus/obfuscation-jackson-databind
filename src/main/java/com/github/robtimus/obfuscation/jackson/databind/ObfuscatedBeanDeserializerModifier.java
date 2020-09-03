@@ -23,7 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationConfig;
@@ -33,18 +32,16 @@ import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
+import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 import com.github.robtimus.obfuscation.annotation.ObfuscatorFactory;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
-import com.github.robtimus.obfuscation.annotation.StringRepresentationProvider;
 
 final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier {
 
     private final Obfuscator defaultObfuscator;
-    private final Function<Object, ? extends CharSequence> defaultStringRepresentation;
 
-    ObfuscatedBeanDeserializerModifier(Obfuscator defaultObfuscator, Function<Object, ? extends CharSequence> defaultStringRepresentation) {
+    ObfuscatedBeanDeserializerModifier(Obfuscator defaultObfuscator) {
         this.defaultObfuscator = defaultObfuscator;
-        this.defaultStringRepresentation = defaultStringRepresentation;
     }
 
     @Override
@@ -61,18 +58,18 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
                 JsonDeserializer<Object> deserializer = property.getValueDeserializer();
                 Obfuscator obfuscator = ObfuscatorFactory.createObfuscator(property::getAnnotation)
                         .orElse(defaultObfuscator);
-                Function<Object, ? extends CharSequence> stringRepresentation = getStringRepresentation(property);
+                CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(property);
                 JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForObfuscated(property, deserializer, obfuscator,
-                        stringRepresentation);
+                        characterRepresentationProvider);
                 replaceProperty(property, newDeserializer, propertyReplacements);
 
             } else if (rawPropertyType == List.class) {
                 ObfuscatorFactory.createObfuscator(property::getAnnotation)
                         .ifPresent(obfuscator -> {
                             JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            Function<Object, ? extends CharSequence> stringRepresentation = getStringRepresentation(property);
+                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(property);
                             JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForList(property, deserializer, obfuscator,
-                                    stringRepresentation);
+                                    characterRepresentationProvider);
                             replaceProperty(property, newDeserializer, propertyReplacements);
                         });
 
@@ -80,9 +77,9 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
                 ObfuscatorFactory.createObfuscator(property::getAnnotation)
                         .ifPresent(obfuscator -> {
                             JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            Function<Object, ? extends CharSequence> stringRepresentation = getStringRepresentation(property);
+                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(property);
                             JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForSet(property, deserializer, obfuscator,
-                                    stringRepresentation);
+                                    characterRepresentationProvider);
                             replaceProperty(property, newDeserializer, propertyReplacements);
                         });
 
@@ -90,9 +87,9 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
                 ObfuscatorFactory.createObfuscator(property::getAnnotation)
                         .ifPresent(obfuscator -> {
                             JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            Function<Object, ? extends CharSequence> stringRepresentation = getStringRepresentation(property);
+                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(property);
                             JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForCollection(property, deserializer, obfuscator,
-                                    stringRepresentation);
+                                    characterRepresentationProvider);
                             replaceProperty(property, newDeserializer, propertyReplacements);
                         });
 
@@ -100,9 +97,9 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
                 ObfuscatorFactory.createObfuscator(property::getAnnotation)
                         .ifPresent(obfuscator -> {
                             JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            Function<Object, ? extends CharSequence> stringRepresentation = getStringRepresentation(property);
+                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(property);
                             JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForMap(property, deserializer, obfuscator,
-                                    stringRepresentation);
+                                    characterRepresentationProvider);
                             replaceProperty(property, newDeserializer, propertyReplacements);
                         });
             }
@@ -120,10 +117,10 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
         propertyReplacements.put(property.getName(), replacement);
     }
 
-    private Function<Object, ? extends CharSequence> getStringRepresentation(BeanProperty property) {
+    private CharacterRepresentationProvider getCharacterRepresentationProvider(BeanProperty property) {
         RepresentedBy representedBy = property.getAnnotation(RepresentedBy.class);
         return representedBy != null
-                ? StringRepresentationProvider.createInstance(representedBy.value()).stringRepresentation()
-                : defaultStringRepresentation;
+                ? CharacterRepresentationProvider.createInstance(representedBy.value())
+                : CharacterRepresentationProvider.ToString.INSTANCE;
     }
 }
