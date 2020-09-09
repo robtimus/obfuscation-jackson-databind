@@ -17,19 +17,27 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 import com.github.robtimus.obfuscation.jackson.databind.ObfuscationModuleTest.NestedClass;
 
-// This class needs to be public so it can be instantiated
+// This class needs to be public so it can be instantiated even with CAN_OVERRIDE_ACCESS_MODIFIERS disabled
 @SuppressWarnings({ "javadoc", "nls" })
 public final class CustomCharacterRepresentationProvider extends CharacterRepresentationProvider.TypeSpecific<NestedClass> {
 
+    private static final AtomicInteger INSTANTIATION_COUNT = new AtomicInteger();
+
     public CustomCharacterRepresentationProvider() {
         super(NestedClass.class);
+        INSTANTIATION_COUNT.incrementAndGet();
     }
 
     @Override
     protected CharSequence convert(NestedClass value) {
         return "<<" + value.intValue + ">>";
+    }
+
+    public static int getInstantiationCount() {
+        return INSTANTIATION_COUNT.get();
     }
 }

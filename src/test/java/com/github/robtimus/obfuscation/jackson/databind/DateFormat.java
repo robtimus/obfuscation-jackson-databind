@@ -21,7 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
-// This class needs to be public so it can be instantiated
+// This class needs to be public so it can be instantiated even with CAN_OVERRIDE_ACCESS_MODIFIERS disabled
 @SuppressWarnings({ "javadoc", "nls" })
 public final class DateFormat extends CharacterRepresentationProvider.TypeSpecific<Date> {
 

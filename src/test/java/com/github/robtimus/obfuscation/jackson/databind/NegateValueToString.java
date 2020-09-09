@@ -19,7 +19,7 @@ package com.github.robtimus.obfuscation.jackson.databind;
 
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
-// This class needs to be public so it can be instantiated
+// This class needs to be public so it can be instantiated even with CAN_OVERRIDE_ACCESS_MODIFIERS disabled
 @SuppressWarnings("javadoc")
 public final class NegateValueToString extends CharacterRepresentationProvider.TypeSpecific<Integer> {
 

@@ -19,9 +19,8 @@ package com.github.robtimus.obfuscation.jackson.databind;
 
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
 
-// This class needs to be public so it can be instantiated
-@SuppressWarnings("javadoc")
-public final class UpperCase implements CharacterRepresentationProvider {
+// This class is not public, so it cannot be instantiated if CAN_OVERRIDE_ACCESS_MODIFIERS is disabled
+final class UpperCase implements CharacterRepresentationProvider {
 
     @Override
     public CharSequence toCharSequence(Object value) {

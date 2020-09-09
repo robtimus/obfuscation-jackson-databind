@@ -20,9 +20,12 @@ package com.github.robtimus.obfuscation.jackson.databind;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.LocalDate;
@@ -48,6 +51,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -56,6 +60,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.DateDeserializers.DateDeserializer;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
+import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.IntArrayToString;
@@ -242,74 +247,104 @@ class ObfuscationModuleTest {
         private LocalDate toLocalDate(Date date) {
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         }
+
+        @Test
+        @DisplayName("without access modifier fix")
+        void testWithoutAccessModifierFix() {
+            Module module = ObfuscationModule.defaultModule();
+
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module)
+                    .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS);
+
+            int originalInstantiationCount = CustomCharacterRepresentationProvider.getInstantiationCount();
+
+            TestClass original = new TestClass();
+
+            StringWriter writer = new StringWriter();
+            assertDoesNotThrow(() -> mapper.writeValue(writer, original));
+
+            String json = writer.toString();
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> mapper.readValue(json, TestClass.class));
+            assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
+            assertEquals(getExpectedErrorMessage(UpperCase.class), exception.getCause().getMessage());
+
+            assertEquals(originalInstantiationCount + 1, CustomCharacterRepresentationProvider.getInstantiationCount());
+        }
+
+        private String getExpectedErrorMessage(Class<?> cls) {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> ClassUtil.createInstance(cls, false));
+            return exception.getMessage();
+        }
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    private static final class TestClass {
+    public static final class TestClass {
 
         @ObfuscateFixedValue("<null>")
-        private Obfuscated<String> nullValue = null;
+        public Obfuscated<String> nullValue = null;
 
         @ObfuscateFixedValue("<string>")
-        private Obfuscated<String> stringValue = Obfuscator.all().obfuscateObject("foo");
+        public Obfuscated<String> stringValue = Obfuscator.all().obfuscateObject("foo");
 
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
         @JsonSerialize(using = DateSerializer.class)
         @JsonDeserialize(using = DateDeserializer.class)
-        private Obfuscated<Date> dateValue = Obfuscator.all().obfuscateObject(calculateDate());
+        public Obfuscated<Date> dateValue = Obfuscator.all().obfuscateObject(calculateDate());
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(IntArrayToString.class)
-        private Obfuscated<int[]> intArray = Obfuscator.all().obfuscateObject(new int[] { 1, 2, 3 });
+        public Obfuscated<int[]> intArray = Obfuscator.all().obfuscateObject(new int[] { 1, 2, 3 });
 
         @ObfuscateNone
         @RepresentedBy(CustomCharacterRepresentationProvider.class)
-        private Obfuscated<NestedClass> nestedClass = Obfuscator.all().obfuscateObject(new NestedClass());
+        public Obfuscated<NestedClass> nestedClass = Obfuscator.all().obfuscateObject(new NestedClass());
 
         @ObfuscateFixedLength(8)
         @RepresentedBy(CustomCharacterRepresentationProvider.class)
         @JsonProperty("cws")
-        private Obfuscated<ClassWithSerializer> classWithSerializer = Obfuscator.all().obfuscateObject(new ClassWithSerializer(1));
+        public Obfuscated<ClassWithSerializer> classWithSerializer = Obfuscator.all().obfuscateObject(new ClassWithSerializer(1));
 
         @ObfuscateFixedLength(8)
-        private List<String> obfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public List<String> obfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(UpperCase.class)
-        private List<String> upperCaseObfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public List<String> upperCaseObfuscatedList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
-        private List<String> regularList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public List<String> regularList = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscateFixedLength(8)
-        private Set<String> obfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+        public Set<String> obfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(UpperCase.class)
-        private Set<String> upperCaseObfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+        public Set<String> upperCaseObfuscatedSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
 
-        private Set<String> regularSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
+        public Set<String> regularSet = Obfuscator.all().obfuscateSet(Collections.singleton("foo"));
 
         @ObfuscateFixedLength(5)
-        private Collection<String> obfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public Collection<String> obfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(UpperCase.class)
-        private Collection<String> upperCaseObfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public Collection<String> upperCaseObfuscatedCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
-        private Collection<String> regularCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+        public Collection<String> regularCollection = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
 
         @ObfuscateFixedLength(6)
-        private Map<Integer, Integer> obfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+        public Map<Integer, Integer> obfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
         @RepresentedBy(NegateValueToString.class)
-        private Map<Integer, Integer> negateValueObfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+        public Map<Integer, Integer> negateValueObfuscatedMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
 
-        private Map<Integer, Integer> regularMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
+        public Map<Integer, Integer> regularMap = Obfuscator.all().obfuscateMap(Collections.singletonMap(1, 2));
 
         @ObfuscatePortion(keepAtStart = 8)
         @RepresentedBy(DateFormat.class)
-        private List<Date> obfuscatedDateList = Obfuscator.all().obfuscateList(Arrays.asList(calculateDate()));
+        public List<Date> obfuscatedDateList = Obfuscator.all().obfuscateList(Arrays.asList(calculateDate()));
 
         private Date calculateDate() {
             Calendar calendar = Calendar.getInstance();
@@ -326,14 +361,14 @@ class ObfuscationModuleTest {
     }
 
     @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-    static final class NestedClass {
+    public static final class NestedClass {
 
-        int intValue = 13;
+        public int intValue = 13;
     }
 
     @JsonSerialize(using = CustomSerializer.class)
     @JsonDeserialize(using = CustomDeserializer.class)
-    private static final class ClassWithSerializer {
+    public static final class ClassWithSerializer {
 
         private final int intValue;
 
@@ -347,7 +382,7 @@ class ObfuscationModuleTest {
         }
     }
 
-    private static final class CustomSerializer extends JsonSerializer<ClassWithSerializer> {
+    public static final class CustomSerializer extends JsonSerializer<ClassWithSerializer> {
 
         @Override
         public void serialize(ClassWithSerializer value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
@@ -355,7 +390,7 @@ class ObfuscationModuleTest {
         }
     }
 
-    private static final class CustomDeserializer extends JsonDeserializer<ClassWithSerializer> {
+    public static final class CustomDeserializer extends JsonDeserializer<ClassWithSerializer> {
 
         @Override
         public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
