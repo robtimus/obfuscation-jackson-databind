@@ -74,7 +74,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
         @Override
         JavaType extractJavaType() {
             // property.getType() is Obfuscated<T>, so this returns the actual T
-            return property.getType().getBindings().getTypeParameters().get(0);
+            return property.getType().getBindings().getBoundType(0);
         }
 
         @Override
