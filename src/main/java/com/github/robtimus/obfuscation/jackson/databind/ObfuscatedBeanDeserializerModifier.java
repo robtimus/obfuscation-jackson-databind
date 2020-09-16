@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import com.fasterxml.jackson.databind.BeanDescription;
@@ -70,59 +71,84 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
             // These if-statements check for exact interface declarations, so the obfuscating replacement will have a compatible type
 
             if (rawPropertyType == Obfuscated.class) {
-                JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                Obfuscator obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
-                        .orElse(defaultObfuscator);
-                CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
-                JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForObfuscated(property, deserializer, obfuscator,
-                        characterRepresentationProvider);
+                JsonDeserializer<Object> newDeserializer = createDeserializerForObfuscated(config, property);
                 replaceProperty(property, newDeserializer, propertyReplacements);
 
             } else if (rawPropertyType == List.class) {
-                FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
-                        .ifPresent(obfuscator -> {
-                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
-                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForList(property, deserializer, obfuscator,
-                                    characterRepresentationProvider);
-                            replaceProperty(property, newDeserializer, propertyReplacements);
-                        });
+                createDeserializerForList(config, property)
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
 
             } else if (rawPropertyType == Set.class) {
-                FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
-                        .ifPresent(obfuscator -> {
-                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
-                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForSet(property, deserializer, obfuscator,
-                                    characterRepresentationProvider);
-                            replaceProperty(property, newDeserializer, propertyReplacements);
-                        });
+                createDeserializerForSet(config, property)
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
 
             } else if (rawPropertyType == Collection.class) {
-                FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
-                        .ifPresent(obfuscator -> {
-                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
-                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForCollection(property, deserializer, obfuscator,
-                                    characterRepresentationProvider);
-                            replaceProperty(property, newDeserializer, propertyReplacements);
-                        });
+                createDeserializerForCollection(config, property)
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
 
             } else if (rawPropertyType == Map.class) {
-                FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
-                        .ifPresent(obfuscator -> {
-                            JsonDeserializer<Object> deserializer = property.getValueDeserializer();
-                            CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
-                            JsonDeserializer<Object> newDeserializer = new ObfuscatedDeserializer.ForMap(property, deserializer, obfuscator,
-                                    characterRepresentationProvider);
-                            replaceProperty(property, newDeserializer, propertyReplacements);
-                        });
+                createDeserializerForMap(config, property)
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
             }
         }
         for (SettableBeanProperty property : propertyReplacements.values()) {
             updatedBuilder.addOrReplaceProperty(property, true);
         }
         return updatedBuilder;
+    }
+
+    private JsonDeserializer<Object> createDeserializerForObfuscated(DeserializationConfig config, SettableBeanProperty property) {
+        JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+        Obfuscator obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation)
+                .orElse(defaultObfuscator);
+        CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
+        return new ObfuscatedDeserializer.ForObfuscated(property, deserializer, obfuscator, characterRepresentationProvider);
+    }
+
+    private Optional<JsonDeserializer<Object>> createDeserializerForList(DeserializationConfig config, SettableBeanProperty property) {
+        Optional<Obfuscator> obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation);
+        return obfuscator.map(o -> createDeserializerForList(config, property, o));
+    }
+
+    private JsonDeserializer<Object> createDeserializerForList(DeserializationConfig config, SettableBeanProperty property, Obfuscator obfuscator) {
+        JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+        CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
+        return new ObfuscatedDeserializer.ForList(property, deserializer, obfuscator, characterRepresentationProvider);
+    }
+
+    private Optional<JsonDeserializer<Object>> createDeserializerForSet(DeserializationConfig config, SettableBeanProperty property) {
+        Optional<Obfuscator> obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation);
+        return obfuscator.map(o -> createDeserializerForSet(config, property, o));
+    }
+
+    private JsonDeserializer<Object> createDeserializerForSet(DeserializationConfig config, SettableBeanProperty property, Obfuscator obfuscator) {
+        JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+        CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
+        return new ObfuscatedDeserializer.ForSet(property, deserializer, obfuscator, characterRepresentationProvider);
+    }
+
+    private Optional<JsonDeserializer<Object>> createDeserializerForCollection(DeserializationConfig config, SettableBeanProperty property) {
+        Optional<Obfuscator> obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation);
+        return obfuscator.map(o -> createDeserializerForCollection(config, property, o));
+    }
+
+    private JsonDeserializer<Object> createDeserializerForCollection(DeserializationConfig config, SettableBeanProperty property,
+            Obfuscator obfuscator) {
+
+        JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+        CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
+        return new ObfuscatedDeserializer.ForCollection(property, deserializer, obfuscator, characterRepresentationProvider);
+    }
+
+    private Optional<JsonDeserializer<Object>> createDeserializerForMap(DeserializationConfig config, SettableBeanProperty property) {
+        Optional<Obfuscator> obfuscator = FACTORY_MAPPER.apply(config).obfuscator(property::getAnnotation);
+        return obfuscator.map(o -> createDeserializerForMap(config, property, o));
+    }
+
+    private JsonDeserializer<Object> createDeserializerForMap(DeserializationConfig config, SettableBeanProperty property, Obfuscator obfuscator) {
+        JsonDeserializer<Object> deserializer = property.getValueDeserializer();
+        CharacterRepresentationProvider characterRepresentationProvider = getCharacterRepresentationProvider(config, property);
+        return new ObfuscatedDeserializer.ForMap(property, deserializer, obfuscator, characterRepresentationProvider);
     }
 
     private void replaceProperty(SettableBeanProperty property, JsonDeserializer<Object> newDeserializer,
