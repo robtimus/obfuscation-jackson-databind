@@ -48,8 +48,24 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
 
     private final Obfuscator defaultObfuscator;
 
-    ObfuscatedBeanDeserializerModifier(Obfuscator defaultObfuscator) {
+    private final Map<Class<?>, Obfuscator> classObfuscators;
+    private final Map<Class<?>, Obfuscator> interfaceObfuscators;
+
+    private final Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders;
+    private final Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders;
+
+    ObfuscatedBeanDeserializerModifier(Obfuscator defaultObfuscator,
+            Map<Class<?>, Obfuscator> classObfuscators,
+            Map<Class<?>, Obfuscator> interfaceObfuscators,
+            Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders,
+            Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders) {
+
         this.defaultObfuscator = defaultObfuscator;
+
+        this.classObfuscators = classObfuscators;
+        this.interfaceObfuscators = interfaceObfuscators;
+        this.classCharacterRepresentationProviders = classCharacterRepresentationProviders;
+        this.interfaceCharacterRepresentationProviders = interfaceCharacterRepresentationProviders;
     }
 
     private static <T> T createInstanceWithCanFixAccess(Class<T> type) {
@@ -205,11 +221,8 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // shared
 
     private Optional<Obfuscator> findClassSpecificObfuscator(Class<?> type, ObjectFactory objectFactory) {
-        return objectFactory.obfuscator(type::getAnnotation);
-    }
-
-    private Optional<CharacterRepresentationProvider> findClassSpecificCharacterRepresentationProvider(Class<?> type, ObjectFactory objectFactory) {
-        return objectFactory.characterRepresentationProvider(type::getAnnotation);
+        Obfuscator obfuscator = findClassSpecificObject(type, classObfuscators, interfaceObfuscators);
+        return obfuscator != null ? Optional.of(obfuscator) : objectFactory.obfuscator(type::getAnnotation);
     }
 
     private CharacterRepresentationProvider getCharacterRepresentationProvider(BeanProperty property, int subTypeIndex, ObjectFactory objectFactory) {
@@ -221,10 +234,75 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
         return optionalProvider.orElse(CharacterRepresentationProvider.ToString.INSTANCE);
     }
 
+    private Optional<CharacterRepresentationProvider> findClassSpecificCharacterRepresentationProvider(Class<?> type, ObjectFactory objectFactory) {
+        CharacterRepresentationProvider provider = findClassSpecificObject(type, classCharacterRepresentationProviders,
+                interfaceCharacterRepresentationProviders);
+
+        return provider != null ? Optional.of(provider) : objectFactory.characterRepresentationProvider(type::getAnnotation);
+    }
+
     private void replaceProperty(SettableBeanProperty property, JsonDeserializer<Object> newDeserializer,
             Map<String, SettableBeanProperty> propertyReplacements) {
 
         SettableBeanProperty replacement = property.withValueDeserializer(newDeserializer);
         propertyReplacements.put(property.getName(), replacement);
+    }
+
+    // class-based lookups
+
+    static <T> T findClassSpecificObject(Class<?> type, Map<Class<?>, T> classMappings, Map<Class<?>, T> interfaceMappings) {
+        // Try direct match first
+        T result = findDirectClassSpecificObject(type, classMappings, interfaceMappings);
+        if (result != null) {
+            return result;
+        }
+
+        // Try super-interfaces
+        result = findInterfaceSpecificObject(type, interfaceMappings);
+        if (result != null) {
+            return result;
+        }
+
+        // Try interfaces of super classes
+        if (!type.isInterface()) {
+            Class<?> iterator = type.getSuperclass();
+            while (iterator != null) {
+                result = findInterfaceSpecificObject(iterator, interfaceMappings);
+                if (result != null) {
+                    return result;
+                }
+                iterator = iterator.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    private static <T> T findDirectClassSpecificObject(Class<?> type, Map<Class<?>, T> classMappings, Map<Class<?>, T> interfaceMappings) {
+        if (type.isInterface()) {
+            return interfaceMappings.get(type);
+        }
+        Class<?> iterator = type;
+        while (iterator != null) {
+            T result = classMappings.get(iterator);
+            if (result != null) {
+                return result;
+            }
+            iterator = iterator.getSuperclass();
+        }
+        return null;
+    }
+
+    private static <T> T findInterfaceSpecificObject(Class<?> type, Map<Class<?>, T> interfaceMappings) {
+        for (Class<?> iface : type.getInterfaces()) {
+            T result = interfaceMappings.get(iface);
+            if (result != null) {
+                return result;
+            }
+            result = findInterfaceSpecificObject(iface, interfaceMappings);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
     }
 }
