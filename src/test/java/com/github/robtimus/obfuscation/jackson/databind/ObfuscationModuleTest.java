@@ -302,6 +302,129 @@ class ObfuscationModuleTest {
                 assertEquals("{1=<n**r>}", deserialized.intMap.toString());
                 assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
             }
+
+            @Test
+            @DisplayName("without access modifier fix")
+            void testWithoutAccessModifierFix() {
+                Module module = ObfuscationModule.defaultModule();
+
+                ObjectMapper mapper = new ObjectMapper()
+                        .registerModule(module)
+                        .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS);
+
+                int originalInstantiationCount = CustomCharacterRepresentationProvider.getInstantiationCount();
+
+                TestClass original = new TestClass();
+
+                StringWriter writer = new StringWriter();
+                assertDoesNotThrow(() -> mapper.writeValue(writer, original));
+
+                String json = writer.toString();
+
+                IllegalStateException exception = assertThrows(IllegalStateException.class, () -> mapper.readValue(json, TestClass.class));
+                assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
+                assertEquals(getExpectedErrorMessage(UpperCase.class), exception.getCause().getMessage());
+
+                assertEquals(originalInstantiationCount + 1, CustomCharacterRepresentationProvider.getInstantiationCount());
+            }
+
+            private String getExpectedErrorMessage(Class<?> cls) {
+                IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> ClassUtil.createInstance(cls, false));
+                return exception.getMessage();
+            }
+
+            @Test
+            @DisplayName("requiring annotated obfuscator")
+            void testRequiringAnnotatedObfuscator() throws IOException {
+                Module module = ObfuscationModule.builder()
+                        .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
+                        .withDefaultObfuscator(Number.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
+                        .withDefaultCharacterRepresentation(Number.class, s -> "<number>")
+                        .withDefaultObfuscator(CharSequence.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
+                        .withDefaultCharacterRepresentation(CharSequence.class, s -> "<charSequence>")
+                        // not used, just to show that the maps are not overwritten
+                        .withDefaultObfuscator(File.class, Obfuscator.none())
+                        .withDefaultCharacterRepresentation(File.class, s -> "file")
+                        .withDefaultObfuscator(Path.class, Obfuscator.none())
+                        .withDefaultCharacterRepresentation(Path.class, s -> "path")
+                        .requireObfuscatorAnnotation(true)
+                        .build();
+
+                ObjectMapper mapper = new ObjectMapper()
+                        .registerModule(module);
+
+                TestClass original = new TestClass();
+
+                StringWriter writer = new StringWriter();
+                mapper.writeValue(writer, original);
+
+                String json = writer.toString();
+
+                TestClass deserialized = mapper.readValue(json, TestClass.class);
+
+                assertEquals(original.fixedValue, deserialized.fixedValue);
+                assertEquals(original.dateValue, deserialized.dateValue);
+                assertNotNull(deserialized.intArray);
+                assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
+                assertNotNull(deserialized.nestedClass);
+                assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
+                assertNotNull(deserialized.classWithSerializer);
+                assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
+                assertEquals(original.annotated, deserialized.annotated);
+                assertEquals(original.stringValue, deserialized.stringValue);
+                assertEquals(original.intValue, deserialized.intValue);
+                assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+                assertEquals(original.upperCaseObfuscatedList, deserialized.upperCaseObfuscatedList);
+                assertEquals(original.annotatedList, deserialized.annotatedList);
+                assertEquals(original.stringList, deserialized.stringList);
+                assertEquals(original.intList, deserialized.intList);
+                assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+                assertEquals(original.upperCaseObfuscatedSet, deserialized.upperCaseObfuscatedSet);
+                assertEquals(original.annotatedSet, deserialized.annotatedSet);
+                assertEquals(original.stringSet, deserialized.stringSet);
+                assertEquals(original.intSet, deserialized.intSet);
+                assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+                assertEquals(original.upperCaseObfuscatedCollection, deserialized.upperCaseObfuscatedCollection);
+                assertEquals(original.annotatedCollection, deserialized.annotatedCollection);
+                assertEquals(original.stringCollection, deserialized.stringCollection);
+                assertEquals(original.intCollection, deserialized.intCollection);
+                assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+                assertEquals(original.negateValueObfuscatedMap, deserialized.negateValueObfuscatedMap);
+                assertEquals(original.annotatedMap, deserialized.annotatedMap);
+                assertEquals(original.stringMap, deserialized.stringMap);
+                assertEquals(original.intMap, deserialized.intMap);
+                assertEquals(toLocalDates(original.obfuscatedDateList), toLocalDates(deserialized.obfuscatedDateList));
+
+                assertEquals("<string>", deserialized.fixedValue.toString());
+                assertEquals("<default>", deserialized.dateValue.toString());
+                assertEquals("[***]", deserialized.intArray.toString());
+                assertEquals("<<13>>", deserialized.nestedClass.toString());
+                assertEquals("********", deserialized.classWithSerializer.toString());
+                assertEquals("an**ed", deserialized.annotated.toString());
+                assertEquals("<c**e>", deserialized.stringValue.toString());
+                assertEquals("<n**r>", deserialized.intValue.toString());
+                assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedList.toString());
+                assertEquals("[" + deserialized.annotatedList.iterator().next() + "]", deserialized.annotatedList.toString());
+                assertEquals("[foo, bar]", deserialized.stringList.toString());
+                assertEquals("[1, 2]", deserialized.intList.toString());
+                assertEquals("[********]", deserialized.obfuscatedSet.toString());
+                assertEquals("[F***O]", deserialized.upperCaseObfuscatedSet.toString());
+                assertEquals("[" + deserialized.annotatedSet.iterator().next() + "]", deserialized.annotatedSet.toString());
+                assertEquals("[foo]", deserialized.stringSet.toString());
+                assertEquals("[1]", deserialized.intSet.toString());
+                assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedCollection.toString());
+                assertEquals("[" + deserialized.annotatedCollection.iterator().next() + "]", deserialized.annotatedCollection.toString());
+                assertEquals("[foo, bar]", deserialized.stringCollection.toString());
+                assertEquals("[1, 2]", deserialized.intCollection.toString());
+                assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+                assertEquals("{1=-***2}", deserialized.negateValueObfuscatedMap.toString());
+                assertEquals("{foo=" + deserialized.annotatedMap.get("foo") + "}", deserialized.annotatedMap.toString());
+                assertEquals("{foo=bar}", deserialized.stringMap.toString());
+                assertEquals("{1=2}", deserialized.intMap.toString());
+                assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
+            }
         }
 
         private List<LocalDate> toLocalDates(List<Date> dates) {
@@ -312,36 +435,6 @@ class ObfuscationModuleTest {
 
         private LocalDate toLocalDate(Date date) {
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        }
-
-        @Test
-        @DisplayName("without access modifier fix")
-        void testWithoutAccessModifierFix() {
-            Module module = ObfuscationModule.defaultModule();
-
-            ObjectMapper mapper = new ObjectMapper()
-                    .registerModule(module)
-                    .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS);
-
-            int originalInstantiationCount = CustomCharacterRepresentationProvider.getInstantiationCount();
-
-            TestClass original = new TestClass();
-
-            StringWriter writer = new StringWriter();
-            assertDoesNotThrow(() -> mapper.writeValue(writer, original));
-
-            String json = writer.toString();
-
-            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> mapper.readValue(json, TestClass.class));
-            assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
-            assertEquals(getExpectedErrorMessage(UpperCase.class), exception.getCause().getMessage());
-
-            assertEquals(originalInstantiationCount + 1, CustomCharacterRepresentationProvider.getInstantiationCount());
-        }
-
-        private String getExpectedErrorMessage(Class<?> cls) {
-            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> ClassUtil.createInstance(cls, false));
-            return exception.getMessage();
         }
     }
 

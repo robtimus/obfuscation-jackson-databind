@@ -56,6 +56,8 @@ public final class ObfuscationModule extends Module {
     private final Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders;
     private final Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders;
 
+    private final boolean requireObfuscatorAnnotation;
+
     private ObfuscationModule(Builder builder) {
         defaultObfuscator = builder.defaultObfuscator;
 
@@ -63,6 +65,8 @@ public final class ObfuscationModule extends Module {
         interfaceObfuscators = copyMap(builder.interfaceObfuscators);
         classCharacterRepresentationProviders = copyMap(builder.classCharacterRepresentationProviders);
         interfaceCharacterRepresentationProviders = copyMap(builder.interfaceCharacterRepresentationProviders);
+
+        requireObfuscatorAnnotation = builder.requireObfuscatorAnnotation;
     }
 
     private static <T> Map<Class<?>, T> copyMap(Map<Class<?>, T> map) {
@@ -85,7 +89,9 @@ public final class ObfuscationModule extends Module {
     public void setupModule(SetupContext context) {
         context.addBeanSerializerModifier(new ObfuscatedBeanSerializerModifier());
         context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(defaultObfuscator,
-                classObfuscators, interfaceObfuscators, classCharacterRepresentationProviders, interfaceCharacterRepresentationProviders));
+                classObfuscators, interfaceObfuscators,
+                classCharacterRepresentationProviders, interfaceCharacterRepresentationProviders,
+                requireObfuscatorAnnotation));
     }
 
     /**
@@ -122,6 +128,8 @@ public final class ObfuscationModule extends Module {
 
         private Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders;
         private Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders;
+
+        private boolean requireObfuscatorAnnotation = false;
 
         private Builder() {
             super();
@@ -166,6 +174,22 @@ public final class ObfuscationModule extends Module {
                 }
                 classObfuscators.put(type, defaultObfuscator);
             }
+            return this;
+        }
+
+        /**
+         * Sets whether or not to require an annotation to provide an obfuscator for {@link List}, {@link Set}, {@link Collection} and {@link Map}
+         * fields. If not, then any {@link List}, {@link Set}, {@link Collection} and {@link Map} field with a generic type for which a
+         * {@link #withDefaultObfuscator(Class, Obfuscator) default obfuscator} was specified will be obfuscated during deserialization.
+         * The default is {@code false}.
+         *
+         * @param requireObfuscatorAnnotation {@code true} to require an annotation to provide an obfuscator,
+         *                                        or {@code false} to use default obfuscators if present.
+         * @return This object.
+         * @since 1.1
+         */
+        public Builder requireObfuscatorAnnotation(boolean requireObfuscatorAnnotation) {
+            this.requireObfuscatorAnnotation = requireObfuscatorAnnotation;
             return this;
         }
 
