@@ -62,7 +62,7 @@ The matching will be the same as for default obfuscators. By default, the follow
 * [DoubleArrayToString](https://robtimus.github.io/obfuscation-annotations/apidocs/com/github/robtimus/obfuscation/annotation/CharacterRepresentationProvider.DoubleArrayToString.html) for `double[]`
 * [ObjectArrayToString](https://robtimus.github.io/obfuscation-annotations/apidocs/com/github/robtimus/obfuscation/annotation/CharacterRepresentationProvider.ObjectArrayToString.html) for `Object[]`
 
-This means that it's not necessary to use `@RepresentedBy` on any property of that type just to prevent obfuscating values like [I@490d6c15 instead of [1, 2, 3].
+This means that it's not necessary to use `@RepresentedBy` on any property of that type just to prevent obfuscating values like `[I@490d6c15` instead of `[1, 2, 3]`.
 
 ### Character representation provider lookup order
 

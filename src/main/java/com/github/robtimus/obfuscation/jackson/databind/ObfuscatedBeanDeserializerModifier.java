@@ -227,11 +227,13 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
 
     private CharacterRepresentationProvider getCharacterRepresentationProvider(BeanProperty property, int subTypeIndex, ObjectFactory objectFactory) {
         Optional<CharacterRepresentationProvider> optionalProvider = objectFactory.characterRepresentationProvider(property::getAnnotation);
-        if (!optionalProvider.isPresent()) {
-            Class<?> type = property.getType().getBindings().getBoundType(subTypeIndex).getRawClass();
-            optionalProvider = findClassSpecificCharacterRepresentationProvider(type, objectFactory);
+        if (optionalProvider.isPresent()) {
+            return optionalProvider.get();
         }
-        return optionalProvider.orElse(CharacterRepresentationProvider.ToString.INSTANCE);
+
+        Class<?> type = property.getType().getBindings().getBoundType(subTypeIndex).getRawClass();
+        optionalProvider = findClassSpecificCharacterRepresentationProvider(type, objectFactory);
+        return optionalProvider.orElseGet(() -> CharacterRepresentationProvider.getDefaultInstance(type));
     }
 
     private Optional<CharacterRepresentationProvider> findClassSpecificCharacterRepresentationProvider(Class<?> type, ObjectFactory objectFactory) {
@@ -257,21 +259,23 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
             return result;
         }
 
-        // Try super-interfaces
-        result = findInterfaceSpecificObject(type, interfaceMappings);
-        if (result != null) {
-            return result;
-        }
+        if (!interfaceMappings.isEmpty()) {
+            // Try super-interfaces
+            result = findInterfaceSpecificObject(type, interfaceMappings);
+            if (result != null) {
+                return result;
+            }
 
-        // Try interfaces of super classes
-        if (!type.isInterface()) {
-            Class<?> iterator = type.getSuperclass();
-            while (iterator != null) {
-                result = findInterfaceSpecificObject(iterator, interfaceMappings);
-                if (result != null) {
-                    return result;
+            // Try interfaces of super classes
+            if (!type.isInterface()) {
+                Class<?> iterator = type.getSuperclass();
+                while (iterator != null) {
+                    result = findInterfaceSpecificObject(iterator, interfaceMappings);
+                    if (result != null) {
+                        return result;
+                    }
+                    iterator = iterator.getSuperclass();
                 }
-                iterator = iterator.getSuperclass();
             }
         }
         return null;
@@ -279,15 +283,18 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
 
     private static <T> T findDirectClassSpecificObject(Class<?> type, Map<Class<?>, T> classMappings, Map<Class<?>, T> interfaceMappings) {
         if (type.isInterface()) {
+            // no need to check for interfaceMappings.isEmpty(), as interfaceMappings.get(type) will then return null anyway
             return interfaceMappings.get(type);
         }
-        Class<?> iterator = type;
-        while (iterator != null) {
-            T result = classMappings.get(iterator);
-            if (result != null) {
-                return result;
+        if (!classMappings.isEmpty()) {
+            Class<?> iterator = type;
+            while (iterator != null) {
+                T result = classMappings.get(iterator);
+                if (result != null) {
+                    return result;
+                }
+                iterator = iterator.getSuperclass();
             }
-            iterator = iterator.getSuperclass();
         }
         return null;
     }

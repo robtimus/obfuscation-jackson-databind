@@ -125,15 +125,6 @@ public final class ObfuscationModule extends Module {
 
         private Builder() {
             super();
-            withDefaultCharacterRepresentation(boolean[].class, BooleanArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(char[].class, CharArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(byte[].class, ByteArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(short[].class, ShortArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(int[].class, IntArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(long[].class, LongArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(float[].class, FloatArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(double[].class, DoubleArrayToString.INSTANCE);
-            withDefaultCharacterRepresentation(Object[].class, ObjectArrayToString.INSTANCE);
         }
 
         /**
