@@ -20,6 +20,7 @@ package com.github.robtimus.obfuscation.jackson.databind;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -52,6 +54,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException.Reference;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.Module;
@@ -61,11 +64,13 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.DateDeserializers.DateDeserializer;
+import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
 import com.fasterxml.jackson.databind.ser.std.DateSerializer;
 import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
+import com.github.robtimus.obfuscation.annotation.ObfuscateAll;
 import com.github.robtimus.obfuscation.annotation.ObfuscateFixedLength;
 import com.github.robtimus.obfuscation.annotation.ObfuscateFixedValue;
 import com.github.robtimus.obfuscation.annotation.ObfuscateNone;
@@ -427,6 +432,37 @@ class ObfuscationModuleTest {
             }
         }
 
+        @Test
+        @DisplayName("with non-deserializable type")
+        void testWithNonDeserializableType() throws IOException {
+            Module module = ObfuscationModule.defaultModule();
+
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module);
+
+            WithNonDeserializableType original = new WithNonDeserializableType();
+
+            StringWriter writer = new StringWriter();
+            mapper.writeValue(writer, original);
+
+            String json = writer.toString();
+
+            InvalidDefinitionException exception = assertThrows(InvalidDefinitionException.class,
+                    () -> mapper.readValue(json, WithNonDeserializableType.class));
+
+            // the exception should refer to the generic type, not Obfuscated
+
+            assertEquals(mapper.getTypeFactory().constructType(Runnable.class), exception.getType());
+
+            List<Reference> path = exception.getPath();
+            assertThat(path, hasSize(1));
+
+            Reference reference = path.get(0);
+            assertEquals(WithNonDeserializableType.class.getName() + "[\"value\"]", reference.getDescription());
+            assertEquals("value", reference.getFieldName());
+            path.get(0).getDescription();
+        }
+
         private List<LocalDate> toLocalDates(List<Date> dates) {
             return dates.stream()
                     .map(this::toLocalDate)
@@ -435,6 +471,54 @@ class ObfuscationModuleTest {
 
         private LocalDate toLocalDate(Date date) {
             return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        }
+    }
+
+    @Nested
+    @DisplayName("using constructor")
+    class UsingConstructorTest {
+
+        @Test
+        @DisplayName("serialize")
+        void testSerialize() throws IOException {
+            Module module = ObfuscationModule.defaultModule();
+
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module);
+
+            Obfuscated<String> value = Obfuscator.fixedLength(8).obfuscateObject("foobar");
+            List<String> list = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+            UsingConstructor original = new UsingConstructor(value, list);
+
+            StringWriter writer = new StringWriter();
+            mapper.writeValue(writer, original);
+
+            String json = writer.toString();
+            assertThat(json, containsString("\"value\":\"foobar\""));
+        }
+
+        @Test
+        @DisplayName("deserialize")
+        void testDeserialize() throws IOException {
+            Module module = ObfuscationModule.defaultModule();
+
+            ObjectMapper mapper = new ObjectMapper()
+                    .registerModule(module);
+
+            Obfuscated<String> value = Obfuscator.fixedLength(8).obfuscateObject("foobar");
+            List<String> list = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
+            UsingConstructor original = new UsingConstructor(value, list);
+
+            StringWriter writer = new StringWriter();
+            mapper.writeValue(writer, original);
+
+            String json = writer.toString();
+
+            UsingConstructor deserialized = mapper.readValue(json, UsingConstructor.class);
+
+            assertEquals(original.value, deserialized.value);
+
+            assertEquals("********", deserialized.value.toString());
         }
     }
 
@@ -580,6 +664,35 @@ class ObfuscationModuleTest {
         public String toString() {
             return "{{" + intValue + "}}";
         }
+    }
+
+    public static final class UsingConstructor {
+
+        private final Obfuscated<String> value;
+        private final List<String> list;
+
+        @JsonCreator
+        UsingConstructor(
+                @JsonProperty("value") @ObfuscateFixedLength(8) Obfuscated<String> value,
+                @JsonProperty("list") @ObfuscateAll List<String> list) {
+
+            this.value = value;
+            this.list = list;
+        }
+
+        public Obfuscated<String> getValue() {
+            return value;
+        }
+
+        public List<String> getList() {
+            return list;
+        }
+    }
+
+    @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    public static final class WithNonDeserializableType {
+
+        public final Obfuscated<Runnable> value = Obfuscator.all().obfuscateObject(() -> { /* do nothing */ });
     }
 
     public static final class CustomSerializer extends JsonSerializer<ClassWithSerializer> {

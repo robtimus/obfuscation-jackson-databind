@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerBuilder;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerModifier;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
+import com.fasterxml.jackson.databind.deser.ValueInstantiator;
 import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
@@ -85,6 +86,10 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     public BeanDeserializerBuilder updateBuilder(DeserializationConfig config, BeanDescription beanDesc, BeanDeserializerBuilder builder) {
         BeanDeserializerBuilder updatedBuilder = super.updateBuilder(config, beanDesc, builder);
         Map<String, SettableBeanProperty> propertyReplacements = new LinkedHashMap<>();
+
+        ValueInstantiator valueInstantiator = updatedBuilder.getValueInstantiator();
+        SettableBeanProperty[] constructorArguments = valueInstantiator.getFromObjectArguments(config);
+
         for (Iterator<SettableBeanProperty> i = updatedBuilder.getProperties(); i.hasNext(); ) {
             SettableBeanProperty property = i.next();
             Class<?> rawPropertyType = property.getType().getRawClass();
@@ -93,23 +98,23 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
 
             if (rawPropertyType == Obfuscated.class) {
                 JsonDeserializer<Object> newDeserializer = createDeserializerForObfuscated(config, property);
-                replaceProperty(property, newDeserializer, propertyReplacements);
+                replaceProperty(property, newDeserializer, propertyReplacements, constructorArguments);
 
             } else if (rawPropertyType == List.class) {
                 createDeserializerForList(config, property)
-                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements, constructorArguments));
 
             } else if (rawPropertyType == Set.class) {
                 createDeserializerForSet(config, property)
-                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements, constructorArguments));
 
             } else if (rawPropertyType == Collection.class) {
                 createDeserializerForCollection(config, property)
-                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements, constructorArguments));
 
             } else if (rawPropertyType == Map.class) {
                 createDeserializerForMap(config, property)
-                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements));
+                        .ifPresent(newDeserializer -> replaceProperty(property, newDeserializer, propertyReplacements, constructorArguments));
             }
         }
         for (SettableBeanProperty property : propertyReplacements.values()) {
@@ -249,10 +254,23 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     }
 
     private void replaceProperty(SettableBeanProperty property, JsonDeserializer<Object> newDeserializer,
-            Map<String, SettableBeanProperty> propertyReplacements) {
+            Map<String, SettableBeanProperty> propertyReplacements, SettableBeanProperty[] constructorArguments) {
 
         SettableBeanProperty replacement = property.withValueDeserializer(newDeserializer);
         propertyReplacements.put(property.getName(), replacement);
+        replaceProperty(constructorArguments, property, replacement);
+    }
+
+    private void replaceProperty(SettableBeanProperty[] constructorArguments, SettableBeanProperty property, SettableBeanProperty replacement) {
+        // keep the properties in sync
+        if (constructorArguments != null) {
+            for (int i = 0; i < constructorArguments.length; i++) {
+                if (constructorArguments[i] == property) {
+                    constructorArguments[i] = replacement;
+                    return;
+                }
+            }
+        }
     }
 
     // class-based lookups
