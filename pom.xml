@@ -258,7 +258,8 @@
     <profile>
       <id>min-versions</id>
       <properties>
-        <version.jackson>2.7.0</version.jackson>
+        <!-- Although 2.7.0 should work, there are unit tests that won't compile against it -->
+        <version.jackson>2.9.0</version.jackson>
       </properties>
     </profile>
   </profiles>

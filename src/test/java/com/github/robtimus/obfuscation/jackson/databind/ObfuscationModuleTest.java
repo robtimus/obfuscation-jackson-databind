@@ -460,7 +460,6 @@ class ObfuscationModuleTest {
             Reference reference = path.get(0);
             assertEquals(WithNonDeserializableType.class.getName() + "[\"value\"]", reference.getDescription());
             assertEquals("value", reference.getFieldName());
-            path.get(0).getDescription();
         }
 
         private List<LocalDate> toLocalDates(List<Date> dates) {
