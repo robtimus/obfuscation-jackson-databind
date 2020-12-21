@@ -256,8 +256,7 @@
 
   <profiles>
     <profile>
-      <!-- profile to test against the minimum support Jackson version -->
-      <id>jackson-min-version</id>
+      <id>min-versions</id>
       <properties>
         <version.jackson>2.7.0</version.jackson>
       </properties>
