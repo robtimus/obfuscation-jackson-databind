@@ -310,6 +310,7 @@ class ObfuscationModuleTest {
 
             @Test
             @DisplayName("without access modifier fix")
+            @SuppressWarnings("deprecation")
             void testWithoutAccessModifierFix() {
                 Module module = ObfuscationModule.defaultModule();
 

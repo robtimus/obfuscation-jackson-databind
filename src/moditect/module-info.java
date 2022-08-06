@@ -4,4 +4,6 @@ module com.github.robtimus.obfuscation.jackson.databind {
     requires transitive com.fasterxml.jackson.databind;
 
     exports com.github.robtimus.obfuscation.jackson.databind;
+
+    opens com.github.robtimus.obfuscation.jackson.databind to com.fasterxml.jackson.databind;
 }
