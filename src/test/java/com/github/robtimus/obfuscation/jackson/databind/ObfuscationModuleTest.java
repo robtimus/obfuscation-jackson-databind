@@ -27,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -38,6 +41,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +49,7 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -75,6 +80,7 @@ import com.github.robtimus.obfuscation.annotation.ObfuscateFixedLength;
 import com.github.robtimus.obfuscation.annotation.ObfuscateFixedValue;
 import com.github.robtimus.obfuscation.annotation.ObfuscateNone;
 import com.github.robtimus.obfuscation.annotation.ObfuscatePortion;
+import com.github.robtimus.obfuscation.annotation.ObjectFactory;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
 
 @SuppressWarnings("nls")
@@ -306,6 +312,120 @@ class ObfuscationModuleTest {
                 assertEquals("{foo=<c**e>}", deserialized.stringMap.toString());
                 assertEquals("{1=<n**r>}", deserialized.intMap.toString());
                 assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
+            }
+
+            @Test
+            @DisplayName("with custom ObjectFactory")
+            void testCustomObjectFactory() throws IOException {
+                ObjectFactory objectFactory = spy(new ObjectFactory() {
+
+                    @Override
+                    public <T> T instance(Class<T> type) {
+                        return ClassUtil.createInstance(type, true);
+                    }
+                });
+
+                Module module = ObfuscationModule.builder()
+                        .withDefaultObfuscator(Number.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
+                        .withDefaultCharacterRepresentation(Number.class, s -> "<number>")
+                        .withDefaultObfuscator(CharSequence.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
+                        .withDefaultCharacterRepresentation(CharSequence.class, s -> "<charSequence>")
+                        // not used, just to show that the maps are not overwritten
+                        .withDefaultObfuscator(File.class, Obfuscator.none())
+                        .withDefaultCharacterRepresentation(File.class, s -> "file")
+                        .withDefaultObfuscator(Path.class, Obfuscator.none())
+                        .withDefaultCharacterRepresentation(Path.class, s -> "path")
+                        .withObjectFactory(objectFactory)
+                        .build();
+
+                ObjectMapper mapper = new ObjectMapper()
+                        .registerModule(module);
+
+                TestClass original = new TestClass();
+
+                StringWriter writer = new StringWriter();
+                mapper.writeValue(writer, original);
+
+                String json = writer.toString();
+
+                TestClass deserialized = mapper.readValue(json, TestClass.class);
+
+                assertEquals(original.fixedValue, deserialized.fixedValue);
+                assertEquals(original.dateValue, deserialized.dateValue);
+                assertNotNull(deserialized.intArray);
+                assertArrayEquals(original.intArray.value(), deserialized.intArray.value());
+                assertNotNull(deserialized.nestedClass);
+                assertEquals(original.nestedClass.value().intValue, deserialized.nestedClass.value().intValue);
+                assertNotNull(deserialized.classWithSerializer);
+                assertEquals(original.classWithSerializer.value().intValue, deserialized.classWithSerializer.value().intValue);
+                assertEquals(original.annotated, deserialized.annotated);
+                assertEquals(original.stringValue, deserialized.stringValue);
+                assertEquals(original.intValue, deserialized.intValue);
+                assertEquals(original.obfuscatedList, deserialized.obfuscatedList);
+                assertEquals(original.upperCaseObfuscatedList, deserialized.upperCaseObfuscatedList);
+                assertEquals(original.annotatedList, deserialized.annotatedList);
+                assertEquals(original.stringList, deserialized.stringList);
+                assertEquals(original.intList, deserialized.intList);
+                assertEquals(original.obfuscatedSet, deserialized.obfuscatedSet);
+                assertEquals(original.upperCaseObfuscatedSet, deserialized.upperCaseObfuscatedSet);
+                assertEquals(original.annotatedSet, deserialized.annotatedSet);
+                assertEquals(original.stringSet, deserialized.stringSet);
+                assertEquals(original.intSet, deserialized.intSet);
+                assertEquals(original.obfuscatedCollection, deserialized.obfuscatedCollection);
+                assertEquals(original.upperCaseObfuscatedCollection, deserialized.upperCaseObfuscatedCollection);
+                assertEquals(original.annotatedCollection, deserialized.annotatedCollection);
+                assertEquals(original.stringCollection, deserialized.stringCollection);
+                assertEquals(original.intCollection, deserialized.intCollection);
+                assertEquals(original.obfuscatedMap, deserialized.obfuscatedMap);
+                assertEquals(original.negateValueObfuscatedMap, deserialized.negateValueObfuscatedMap);
+                assertEquals(original.annotatedMap, deserialized.annotatedMap);
+                assertEquals(original.stringMap, deserialized.stringMap);
+                assertEquals(original.intMap, deserialized.intMap);
+                assertEquals(toLocalDates(original.obfuscatedDateList), toLocalDates(deserialized.obfuscatedDateList));
+
+                assertEquals("<string>", deserialized.fixedValue.toString());
+                assertEquals("***", deserialized.dateValue.toString());
+                assertEquals("[***]", deserialized.intArray.toString());
+                assertEquals("<<13>>", deserialized.nestedClass.toString());
+                assertEquals("********", deserialized.classWithSerializer.toString());
+                assertEquals("an**ed", deserialized.annotated.toString());
+                assertEquals("<c**e>", deserialized.stringValue.toString());
+                assertEquals("<n**r>", deserialized.intValue.toString());
+                assertEquals("[********, ********]", deserialized.obfuscatedList.toString());
+                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedList.toString());
+                assertEquals("[an**ed]", deserialized.annotatedList.toString());
+                assertEquals("[<c**e>, <c**e>]", deserialized.stringList.toString());
+                assertEquals("[<n**r>, <n**r>]", deserialized.intList.toString());
+                assertEquals("[********]", deserialized.obfuscatedSet.toString());
+                assertEquals("[F***O]", deserialized.upperCaseObfuscatedSet.toString());
+                assertEquals("[an**ed]", deserialized.annotatedSet.toString());
+                assertEquals("[<c**e>]", deserialized.stringSet.toString());
+                assertEquals("[<n**r>]", deserialized.intSet.toString());
+                assertEquals("[*****, *****]", deserialized.obfuscatedCollection.toString());
+                assertEquals("[F***O, B***R]", deserialized.upperCaseObfuscatedCollection.toString());
+                assertEquals("[an**ed]", deserialized.annotatedCollection.toString());
+                assertEquals("[<c**e>, <c**e>]", deserialized.stringCollection.toString());
+                assertEquals("[<n**r>, <n**r>]", deserialized.intCollection.toString());
+                assertEquals("{1=******}", deserialized.obfuscatedMap.toString());
+                assertEquals("{1=-***2}", deserialized.negateValueObfuscatedMap.toString());
+                assertEquals("{foo=an**ed}", deserialized.annotatedMap.toString());
+                assertEquals("{foo=<c**e>}", deserialized.stringMap.toString());
+                assertEquals("{1=<n**r>}", deserialized.intMap.toString());
+                assertEquals("[2020-05-**]", deserialized.obfuscatedDateList.toString());
+
+                ArgumentCaptor<Class<?>> typeCaptor = ArgumentCaptor.forClass(Class.class);
+
+                verify(objectFactory, atLeastOnce()).instance(typeCaptor.capture());
+
+                Set<Class<?>> types = new HashSet<>(typeCaptor.getAllValues());
+                Set<Class<?>> expectedTypes = new HashSet<>(Arrays.asList(
+                        CustomCharacterRepresentationProvider.class,
+                        DateFormat.class,
+                        NegateValueToString.class,
+                        UpperCase.class,
+                        AnnotatedRepresentation.class
+                ));
+                assertEquals(expectedTypes, types);
             }
 
             @Test

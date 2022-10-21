@@ -25,7 +25,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
@@ -38,6 +41,7 @@ import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvide
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.LongArrayToString;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.ObjectArrayToString;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.ShortArrayToString;
+import com.github.robtimus.obfuscation.annotation.ObjectFactory;
 
 /**
  * A module that adds support for serializing and deserializing obfuscated values.
@@ -48,6 +52,7 @@ public final class ObfuscationModule extends Module {
 
     private static final ObfuscationModule DEFAULT_MODULE = builder().build();
 
+    private final ObjectFactory objectFactory;
     private final Obfuscator defaultObfuscator;
 
     private final Map<Class<?>, Obfuscator> classObfuscators;
@@ -59,6 +64,7 @@ public final class ObfuscationModule extends Module {
     private final boolean requireObfuscatorAnnotation;
 
     private ObfuscationModule(Builder builder) {
+        objectFactory = builder.objectFactory;
         defaultObfuscator = builder.defaultObfuscator;
 
         classObfuscators = copyMap(builder.classObfuscators);
@@ -88,7 +94,7 @@ public final class ObfuscationModule extends Module {
     @Override
     public void setupModule(SetupContext context) {
         context.addBeanSerializerModifier(new ObfuscatedBeanSerializerModifier());
-        context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(defaultObfuscator,
+        context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(objectFactory, defaultObfuscator,
                 classObfuscators, interfaceObfuscators,
                 classCharacterRepresentationProviders, interfaceCharacterRepresentationProviders,
                 requireObfuscatorAnnotation));
@@ -121,6 +127,7 @@ public final class ObfuscationModule extends Module {
 
         private static final Obfuscator DEFAULT_OBFUSCATOR = Obfuscator.fixedLength(3);
 
+        private ObjectFactory objectFactory;
         private Obfuscator defaultObfuscator = DEFAULT_OBFUSCATOR;
 
         private Map<Class<?>, Obfuscator> classObfuscators;
@@ -133,6 +140,21 @@ public final class ObfuscationModule extends Module {
 
         private Builder() {
             super();
+        }
+
+        /**
+         * Sets the object factory to use. This method can be used to override the default object factory, for instance to use an object factory that
+         * uses a Spring bean factory or CDI lookup. The default uses {@link ClassUtil#createInstance(Class, boolean)}, with
+         * {@link DeserializationConfig#canOverrideAccessModifiers()} providing the boolean flag.
+         *
+         * @param objectFactory The object factory to use, or {@code null} to use a default object factory.
+         * @return This object.
+         * @see MapperFeature#CAN_OVERRIDE_ACCESS_MODIFIERS
+         * @since 1.2
+         */
+        public Builder withObjectFactory(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+            return this;
         }
 
         /**

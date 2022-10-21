@@ -47,6 +47,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
             ? CAN_OVERRIDE_ACCESS_MODIFIERS
             : CANNOT_OVERRIDE_ACCESS_MODIFIERS;
 
+    private final Function<DeserializationConfig, ObjectFactory> factoryMapper;
     private final Obfuscator defaultObfuscator;
 
     private final Map<Class<?>, Obfuscator> classObfuscators;
@@ -57,13 +58,15 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
 
     private final boolean requireObfuscatorAnnotation;
 
-    ObfuscatedBeanDeserializerModifier(Obfuscator defaultObfuscator,
+    ObfuscatedBeanDeserializerModifier(ObjectFactory objectFactory,
+            Obfuscator defaultObfuscator,
             Map<Class<?>, Obfuscator> classObfuscators,
             Map<Class<?>, Obfuscator> interfaceObfuscators,
             Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders,
             Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders,
             boolean requireObfuscatorAnnotation) {
 
+        this.factoryMapper = objectFactory != null ? config -> objectFactory : FACTORY_MAPPER;
         this.defaultObfuscator = defaultObfuscator;
 
         this.classObfuscators = classObfuscators;
@@ -126,7 +129,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // Obfuscated
 
     private JsonDeserializer<Object> createDeserializerForObfuscated(DeserializationConfig config, SettableBeanProperty property) {
-        ObjectFactory objectFactory = FACTORY_MAPPER.apply(config);
+        ObjectFactory objectFactory = factoryMapper.apply(config);
         Optional<Obfuscator> optionalObfuscator = objectFactory.obfuscator(property::getAnnotation);
         if (!optionalObfuscator.isPresent()) {
             // property.getType() is Obfuscated<T>, so this returns the actual T
@@ -149,7 +152,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // List
 
     private Optional<JsonDeserializer<Object>> createDeserializerForList(DeserializationConfig config, SettableBeanProperty property) {
-        ObjectFactory objectFactory = FACTORY_MAPPER.apply(config);
+        ObjectFactory objectFactory = factoryMapper.apply(config);
         Optional<Obfuscator> optionalObfuscator = objectFactory.obfuscator(property::getAnnotation);
         if (!optionalObfuscator.isPresent() && !requireObfuscatorAnnotation) {
             // property.getType() is List<T>, so this returns the actual T
@@ -169,7 +172,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // Set
 
     private Optional<JsonDeserializer<Object>> createDeserializerForSet(DeserializationConfig config, SettableBeanProperty property) {
-        ObjectFactory objectFactory = FACTORY_MAPPER.apply(config);
+        ObjectFactory objectFactory = factoryMapper.apply(config);
         Optional<Obfuscator> optionalObfuscator = objectFactory.obfuscator(property::getAnnotation);
         if (!optionalObfuscator.isPresent() && !requireObfuscatorAnnotation) {
             // property.getType() is Set<T>, so this returns the actual T
@@ -189,7 +192,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // Collection
 
     private Optional<JsonDeserializer<Object>> createDeserializerForCollection(DeserializationConfig config, SettableBeanProperty property) {
-        ObjectFactory objectFactory = FACTORY_MAPPER.apply(config);
+        ObjectFactory objectFactory = factoryMapper.apply(config);
         Optional<Obfuscator> optionalObfuscator = objectFactory.obfuscator(property::getAnnotation);
         if (!optionalObfuscator.isPresent() && !requireObfuscatorAnnotation) {
             // property.getType() is Collection<T>, so this returns the actual T
@@ -211,7 +214,7 @@ final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier 
     // Map
 
     private Optional<JsonDeserializer<Object>> createDeserializerForMap(DeserializationConfig config, SettableBeanProperty property) {
-        ObjectFactory objectFactory = FACTORY_MAPPER.apply(config);
+        ObjectFactory objectFactory = factoryMapper.apply(config);
         Optional<Obfuscator> optionalObfuscator = objectFactory.obfuscator(property::getAnnotation);
         if (!optionalObfuscator.isPresent() && !requireObfuscatorAnnotation) {
             // property.getType() is Map<K, V>, so this returns the actual V
