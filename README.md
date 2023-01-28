@@ -1,4 +1,9 @@
 # obfuscation-jackson-databind
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.robtimus/obfuscation-jackson-databind)](https://search.maven.org/artifact/com.github.robtimus/obfuscation-jackson-databind)
+[![Build Status](https://github.com/robtimus/obfuscation-jackson-databind/actions/workflows/build.yml/badge.svg)](https://github.com/robtimus/obfuscation-jackson-databind/actions/workflows/build.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.github.robtimus%3Aobfuscation-jackson-databind&metric=alert_status)](https://sonarcloud.io/summary/overall?id=com.github.robtimus%3Aobfuscation-jackson-databind)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.github.robtimus%3Aobfuscation-jackson-databind&metric=coverage)](https://sonarcloud.io/summary/overall?id=com.github.robtimus%3Aobfuscation-jackson-databind)
+[![Known Vulnerabilities](https://snyk.io/test/github/robtimus/obfuscation-jackson-databind/badge.svg)](https://snyk.io/test/github/robtimus/obfuscation-jackson-databind)
 
 Provides support for serializing and deserializing obfuscated values using Jackson. All you need to do is register a module:
 
