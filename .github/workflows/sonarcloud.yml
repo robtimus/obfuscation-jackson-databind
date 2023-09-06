@@ -42,6 +42,7 @@ jobs:
           mvn clean \
               -Dcheckstyle.skip=true \
               -Dmaven.javadoc.skip=true \
+              -Dmoditect.failOnWarning=false \
               org.jacoco:jacoco-maven-plugin:prepare-agent \
               package \
               verify -Dgpg.skip=true \
