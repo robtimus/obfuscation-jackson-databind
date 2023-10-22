@@ -118,7 +118,7 @@ class ObfuscatedBeanDeserializerModifierTest {
         // no content
     }
 
-    private class SubClass extends ParentClass implements SubInterface {
+    private final class SubClass extends ParentClass implements SubInterface {
         // no content
     }
 }
