@@ -41,20 +41,24 @@ import com.github.robtimus.obfuscation.annotation.ObjectFactory;
 
 final class ObfuscatedBeanDeserializerModifier extends BeanDeserializerModifier {
 
+    // Note: instances are most likely not serializable, because ObjectFactory, Obfuscator and CharacterRepresentationProvider instances are very
+    // unlikely to be so. This may cause issues if ObjectMapper instances are serialized.
+    private static final long serialVersionUID = 1L;
+
     private static final ObjectFactory CAN_OVERRIDE_ACCESS_MODIFIERS = ObfuscatedBeanDeserializerModifier::createInstanceWithCanFixAccess;
     private static final ObjectFactory CANNOT_OVERRIDE_ACCESS_MODIFIERS = ObfuscatedBeanDeserializerModifier::createInstanceWithoutCanFixAccess;
     private static final Function<DeserializationConfig, ObjectFactory> FACTORY_MAPPER = config -> config.canOverrideAccessModifiers()
             ? CAN_OVERRIDE_ACCESS_MODIFIERS
             : CANNOT_OVERRIDE_ACCESS_MODIFIERS;
 
-    private final Function<DeserializationConfig, ObjectFactory> factoryMapper;
-    private final Obfuscator defaultObfuscator;
+    private final Function<DeserializationConfig, ObjectFactory> factoryMapper; // NOSONAR
+    private final Obfuscator defaultObfuscator; // NOSONAR
 
-    private final Map<Class<?>, Obfuscator> classObfuscators;
-    private final Map<Class<?>, Obfuscator> interfaceObfuscators;
+    private final Map<Class<?>, Obfuscator> classObfuscators; // NOSONAR
+    private final Map<Class<?>, Obfuscator> interfaceObfuscators; // NOSONAR
 
-    private final Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders;
-    private final Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders;
+    private final Map<Class<?>, CharacterRepresentationProvider> classCharacterRepresentationProviders; // NOSONAR
+    private final Map<Class<?>, CharacterRepresentationProvider> interfaceCharacterRepresentationProviders; // NOSONAR
 
     private final boolean requireObfuscatorAnnotation;
 

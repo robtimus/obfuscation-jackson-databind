@@ -27,6 +27,8 @@ import com.github.robtimus.obfuscation.Obfuscated;
 
 final class ObfuscatedBeanSerializerModifier extends BeanSerializerModifier {
 
+    private static final long serialVersionUID = 1L;
+
     @Override
     public List<BeanPropertyWriter> changeProperties(SerializationConfig config, BeanDescription beanDesc, List<BeanPropertyWriter> beanProperties) {
         List<BeanPropertyWriter> properties = super.changeProperties(config, beanDesc, beanProperties);

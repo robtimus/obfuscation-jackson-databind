@@ -56,7 +56,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonMappingException.Reference;
@@ -826,7 +825,7 @@ class ObfuscationModuleTest {
     public static final class CustomDeserializer extends JsonDeserializer<ClassWithSerializer> {
 
         @Override
-        public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             int intValue = p.getValueAsInt();
             return new ClassWithSerializer(intValue);
         }
