@@ -7,8 +7,10 @@
 
 Provides support for serializing and deserializing obfuscated values using Jackson. All you need to do is register a module:
 
-    Module module = ObfuscationModule.defaultModule();
-    mapper.registerModule(module);
+```java
+Module module = ObfuscationModule.defaultModule();
+mapper.registerModule(module);
+```
 
 This will automatically allow all instances of [Obfuscated](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscated.html) to be serialized and deserialized, without the need for any custom serializer or deserializer. In fact, any annotation used (apart from the ones below) will be used for the `Obfuscated` object's *value*, not the `Obfuscated` object itself. That means that you can provide custom serialization and/or deserialization for the value the way you're used to, without needing to wrap it inside a new serializer or deserializer.
 
@@ -30,11 +32,13 @@ With the annotations from [obfuscation-annotations](https://robtimus.github.io/o
 
 By default, deserialized `Obfuscated` properties that are not annotated with any of the annotations from [obfuscation-annotations](https://robtimus.github.io/obfuscation-annotations) will use [Obfuscator.fixedLength(3)](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#fixedLength-int-). This can be overridden by using a builder to create the module. With this builder, it's possible to define default obfuscators per type, or a global default obfuscator:
 
-    Module module = ObfuscationModule.builder()
-            .withDefaultObfuscator(String.class, Obfuscator.portion().keepAtStart(2).build())
-            .withDefaultObfuscator(Obfuscator.fixedValue("<obfuscated>"))
-            .build();
-    mapper.registerModule(module);
+```java
+Module module = ObfuscationModule.builder()
+        .withDefaultObfuscator(String.class, Obfuscator.portion().keepAtStart(2).build())
+        .withDefaultObfuscator(Obfuscator.fixedValue("<obfuscated>"))
+        .build();
+mapper.registerModule(module);
+```
 
 A type-specific obfuscator will be used if the generic value type of the `Obfuscated` property matches. This takes into account super classes and implemented interfaces. If there is no match, the global default obfuscator is used.
 
@@ -53,10 +57,12 @@ The following order is used to look up obfuscators for properties:
 
 Like default obfuscators, it's also possible to define default character representation providers per type:
 
-    Module module = ObfuscationModule.builder()
-            .withDefaultCharacterRepresentation(Date.class, d -> formatDate(d))
-            .build();
-    mapper.registerModule(module);
+```java
+Module module = ObfuscationModule.builder()
+        .withDefaultCharacterRepresentation(Date.class, d -> formatDate(d))
+        .build();
+mapper.registerModule(module);
+```
 
 The matching will be the same as for default obfuscators.
 
@@ -75,16 +81,20 @@ The following order is used to look up character representation providers for pr
 
 ### Obfuscate with a fixed length
 
-    @ObfuscateFixedLength(3)
-    private Obfuscated<String> stringValue;
+```java
+@ObfuscateFixedLength(3)
+private Obfuscated<String> stringValue;
+```
 
 ### Obfuscate with the default obfuscator, but provide custom serialization of the obfuscated value
 
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-    @JsonSerialize(using = DateSerializer.class)
-    @JsonDeserialize(using = DateDeserializer.class)
-    @RepresentedBy(DateFormat.class)
-    private Obfuscated<Date> dateValue;
+```java
+@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+@JsonSerialize(using = DateSerializer.class)
+@JsonDeserialize(using = DateDeserializer.class)
+@RepresentedBy(DateFormat.class)
+private Obfuscated<Date> dateValue;
+```
 
 Assume that DateFormat formats Date objects as `yyyy-MM-dd`, then this will obfuscate values like `1970-01-01` and not `Thu Jan 01 00:00:00 GMT 1970`.
 
@@ -92,17 +102,23 @@ Note that the format, serializer and deserializer target `Date`, not `Obfuscated
 
 ### Obfuscate a List
 
-    @ObfuscateFixedLength(3)
-    private List<String> obfuscatedList;
+```java
+@ObfuscateFixedLength(3)
+private List<String> obfuscatedList;
+```
 
 Note that the annotation is needed; the following is not obfuscated (unless there is a default obfuscator for `String` or one of its super types):
 
-    private List<String> regularList;
+```java
+private List<String> regularList;
+```
 
 ### Obfuscate a List using a custom character representation
 
-    @ObfuscatePortion(keepAtStart = 8)
-    @RepresentedBy(DateFormat.class)
-    private List<Date> obfuscatedList;
+```java
+@ObfuscatePortion(keepAtStart = 8)
+@RepresentedBy(DateFormat.class)
+private List<Date> obfuscatedList;
+```
 
 Assume that DateFormat formats Date objects as `yyyy-MM-dd`, then this will obfuscate the days, leaving values like `1970-01-**`.
