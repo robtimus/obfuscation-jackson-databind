@@ -82,7 +82,7 @@ import com.github.robtimus.obfuscation.annotation.ObfuscatePortion;
 import com.github.robtimus.obfuscation.annotation.ObjectFactory;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
 
-@SuppressWarnings("nls")
+@SuppressWarnings({ "nls", "exports" })
 class ObfuscationModuleTest {
 
     @Test

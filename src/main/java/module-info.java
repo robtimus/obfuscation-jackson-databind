@@ -15,10 +15,14 @@
  * limitations under the License.
  */
 
+/**
+ * Provides support for serializing and deserializing obfuscated values using Jackson.
+ */
 module com.github.robtimus.obfuscation.jackson.databind {
     requires transitive com.github.robtimus.obfuscation;
     requires transitive com.github.robtimus.obfuscation.annotations;
     requires transitive com.fasterxml.jackson.databind;
+    requires com.fasterxml.jackson.annotation;
 
     exports com.github.robtimus.obfuscation.jackson.databind;
 
