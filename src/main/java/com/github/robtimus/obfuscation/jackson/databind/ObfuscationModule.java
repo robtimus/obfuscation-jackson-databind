@@ -24,11 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.databind.DeserializationConfig;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
@@ -42,13 +37,18 @@ import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvide
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.ObjectArrayToString;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider.ShortArrayToString;
 import com.github.robtimus.obfuscation.annotation.ObjectFactory;
+import tools.jackson.core.Version;
+import tools.jackson.databind.DeserializationConfig;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.util.ClassUtil;
 
 /**
  * A module that adds support for serializing and deserializing obfuscated values.
  *
  * @author Rob Spoor
  */
-public final class ObfuscationModule extends Module {
+public final class ObfuscationModule extends JacksonModule {
 
     private static final ObfuscationModule DEFAULT_MODULE = builder().build();
 
@@ -93,8 +93,8 @@ public final class ObfuscationModule extends Module {
 
     @Override
     public void setupModule(SetupContext context) {
-        context.addBeanSerializerModifier(new ObfuscatedBeanSerializerModifier());
-        context.addBeanDeserializerModifier(new ObfuscatedBeanDeserializerModifier(objectFactory, defaultObfuscator,
+        context.addSerializerModifier(new ObfuscatedBeanSerializerModifier());
+        context.addDeserializerModifier(new ObfuscatedBeanDeserializerModifier(objectFactory, defaultObfuscator,
                 classObfuscators, interfaceObfuscators,
                 classCharacterRepresentationProviders, interfaceCharacterRepresentationProviders,
                 requireObfuscatorAnnotation));

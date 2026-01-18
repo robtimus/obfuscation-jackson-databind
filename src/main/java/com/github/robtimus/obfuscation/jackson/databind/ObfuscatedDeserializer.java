@@ -17,28 +17,27 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ValueDeserializer;
 
-abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
+abstract class ObfuscatedDeserializer extends ValueDeserializer<Object> {
 
     final BeanProperty property;
-    private final JsonDeserializer<Object> deserializer;
+    private final ValueDeserializer<Object> deserializer;
     private final JavaType valueType;
     final Obfuscator obfuscator;
     final CharacterRepresentationProvider characterRepresentationProvider;
 
-    ObfuscatedDeserializer(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+    ObfuscatedDeserializer(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
             CharacterRepresentationProvider characterRepresentationProvider) {
 
         this.property = property;
@@ -50,8 +49,8 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
     }
 
     @Override
-    public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        JsonDeserializer<Object> actualDeserializer = deserializer != null
+    public Object deserialize(JsonParser p, DeserializationContext ctxt) {
+        ValueDeserializer<Object> actualDeserializer = deserializer != null
                 ? deserializer
                 : ctxt.findContextualValueDeserializer(valueType, property);
 
@@ -65,7 +64,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForObfuscated extends ObfuscatedDeserializer {
 
-        ForObfuscated(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+        ForObfuscated(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
                 CharacterRepresentationProvider characterRepresentationProvider) {
 
             super(property, serializer, obfuscator, characterRepresentationProvider);
@@ -85,7 +84,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForList extends ObfuscatedDeserializer {
 
-        ForList(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+        ForList(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
                 CharacterRepresentationProvider characterRepresentationProvider) {
 
             super(property, serializer, obfuscator, characterRepresentationProvider);
@@ -104,7 +103,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForSet extends ObfuscatedDeserializer {
 
-        ForSet(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+        ForSet(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
                 CharacterRepresentationProvider characterRepresentationProvider) {
 
             super(property, serializer, obfuscator, characterRepresentationProvider);
@@ -123,7 +122,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForCollection extends ObfuscatedDeserializer {
 
-        ForCollection(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+        ForCollection(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
                 CharacterRepresentationProvider characterRepresentationProvider) {
 
             super(property, serializer, obfuscator, characterRepresentationProvider);
@@ -142,7 +141,7 @@ abstract class ObfuscatedDeserializer extends JsonDeserializer<Object> {
 
     static final class ForMap extends ObfuscatedDeserializer {
 
-        ForMap(BeanProperty property, JsonDeserializer<Object> serializer, Obfuscator obfuscator,
+        ForMap(BeanProperty property, ValueDeserializer<Object> serializer, Obfuscator obfuscator,
                 CharacterRepresentationProvider characterRepresentationProvider) {
 
             super(property, serializer, obfuscator, characterRepresentationProvider);

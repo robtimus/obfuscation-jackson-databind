@@ -17,7 +17,6 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -31,7 +30,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import java.io.File;
-import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -54,23 +52,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException.Reference;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.deser.std.DateDeserializers.DateDeserializer;
-import com.fasterxml.jackson.databind.exc.InvalidDefinitionException;
-import com.fasterxml.jackson.databind.ser.std.DateSerializer;
-import com.fasterxml.jackson.databind.util.ClassUtil;
 import com.github.robtimus.obfuscation.Obfuscated;
 import com.github.robtimus.obfuscation.Obfuscator;
 import com.github.robtimus.obfuscation.annotation.CharacterRepresentationProvider;
@@ -81,18 +62,37 @@ import com.github.robtimus.obfuscation.annotation.ObfuscateNone;
 import com.github.robtimus.obfuscation.annotation.ObfuscatePortion;
 import com.github.robtimus.obfuscation.annotation.ObjectFactory;
 import com.github.robtimus.obfuscation.annotation.RepresentedBy;
+import tools.jackson.core.JacksonException.Reference;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.exc.InvalidDefinitionException;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.util.ClassUtil;
 
 @SuppressWarnings({ "nls", "exports" })
 class ObfuscationModuleTest {
 
     @Test
     @DisplayName("serialize")
-    void testSerialize() throws IOException {
-        Module module = ObfuscationModule.defaultModule();
+    @SuppressWarnings("squid:S5961")
+    void testSerialize() {
+        JacksonModule module = ObfuscationModule.defaultModule();
 
-        ObjectMapper mapper = new ObjectMapper()
-                .registerModule(module)
-                .enable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        JsonMapper mapper = JsonMapper.builder()
+                .addModule(module)
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .enable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+                .build();
 
         TestClass original = new TestClass();
 
@@ -138,11 +138,14 @@ class ObfuscationModuleTest {
 
         @Test
         @DisplayName("with default module")
-        void testWithDefaultModule() throws IOException {
-            Module module = ObfuscationModule.defaultModule();
+        @SuppressWarnings("squid:S5961")
+        void testWithDefaultModule() {
+            JacksonModule module = ObfuscationModule.defaultModule();
 
-            ObjectMapper mapper = new ObjectMapper()
-                    .registerModule(module);
+            JsonMapper mapper = JsonMapper.builder()
+                    .addModule(module)
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
 
             TestClass original = new TestClass();
 
@@ -223,8 +226,9 @@ class ObfuscationModuleTest {
 
             @Test
             @DisplayName("with custom default obfuscator")
-            void testWithCustomDefaultObfuscator() throws IOException {
-                Module module = ObfuscationModule.builder()
+            @SuppressWarnings("squid:S5961")
+            void testWithCustomDefaultObfuscator() {
+                JacksonModule module = ObfuscationModule.builder()
                         .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
                         .withDefaultObfuscator(Number.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
                         .withDefaultCharacterRepresentation(Number.class, s -> "<number>")
@@ -237,8 +241,10 @@ class ObfuscationModuleTest {
                         .withDefaultCharacterRepresentation(Path.class, s -> "path")
                         .build();
 
-                ObjectMapper mapper = new ObjectMapper()
-                        .registerModule(module);
+                JsonMapper mapper = JsonMapper.builder()
+                        .addModule(module)
+                        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build();
 
                 TestClass original = new TestClass();
 
@@ -315,7 +321,8 @@ class ObfuscationModuleTest {
 
             @Test
             @DisplayName("with custom ObjectFactory")
-            void testCustomObjectFactory() throws IOException {
+            @SuppressWarnings("squid:S5961")
+            void testCustomObjectFactory() {
                 ObjectFactory objectFactory = spy(new ObjectFactory() {
 
                     @Override
@@ -324,7 +331,7 @@ class ObfuscationModuleTest {
                     }
                 });
 
-                Module module = ObfuscationModule.builder()
+                JacksonModule module = ObfuscationModule.builder()
                         .withDefaultObfuscator(Number.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
                         .withDefaultCharacterRepresentation(Number.class, s -> "<number>")
                         .withDefaultObfuscator(CharSequence.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
@@ -337,8 +344,10 @@ class ObfuscationModuleTest {
                         .withObjectFactory(objectFactory)
                         .build();
 
-                ObjectMapper mapper = new ObjectMapper()
-                        .registerModule(module);
+                JsonMapper mapper = JsonMapper.builder()
+                        .addModule(module)
+                        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build();
 
                 TestClass original = new TestClass();
 
@@ -429,20 +438,25 @@ class ObfuscationModuleTest {
 
             @Test
             @DisplayName("without access modifier fix")
-            @SuppressWarnings("deprecation")
             void testWithoutAccessModifierFix() {
-                Module module = ObfuscationModule.defaultModule();
+                JacksonModule module = ObfuscationModule.defaultModule();
 
-                ObjectMapper mapper = new ObjectMapper()
-                        .registerModule(module)
-                        .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS);
+                JsonMapper mapper = JsonMapper.builder()
+                        .addModule(module)
+                        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .disable(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS)
+                        .build();
 
                 int originalInstantiationCount = CustomCharacterRepresentationProvider.getInstantiationCount();
 
                 TestClass original = new TestClass();
 
                 StringWriter writer = new StringWriter();
-                assertDoesNotThrow(() -> mapper.writeValue(writer, original));
+                assertDoesNotThrow(() -> JsonMapper.builder()
+                        .addModule(module)
+                        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build()
+                        .writeValue(writer, original));
 
                 String json = writer.toString();
 
@@ -450,7 +464,8 @@ class ObfuscationModuleTest {
                 assertThat(exception.getCause(), instanceOf(IllegalArgumentException.class));
                 assertEquals(getExpectedErrorMessage(UpperCase.class), exception.getCause().getMessage());
 
-                assertEquals(originalInstantiationCount + 1, CustomCharacterRepresentationProvider.getInstantiationCount());
+                // 2 additional instantiations: nestedClass and classWithSerializer
+                assertEquals(originalInstantiationCount + 2, CustomCharacterRepresentationProvider.getInstantiationCount());
             }
 
             private String getExpectedErrorMessage(Class<?> cls) {
@@ -460,8 +475,9 @@ class ObfuscationModuleTest {
 
             @Test
             @DisplayName("requiring annotated obfuscator")
-            void testRequiringAnnotatedObfuscator() throws IOException {
-                Module module = ObfuscationModule.builder()
+            @SuppressWarnings("squid:S5961")
+            void testRequiringAnnotatedObfuscator() {
+                JacksonModule module = ObfuscationModule.builder()
                         .withDefaultObfuscator(Obfuscator.fixedValue("<default>"))
                         .withDefaultObfuscator(Number.class, Obfuscator.portion().keepAtStart(2).keepAtEnd(2).withFixedTotalLength(6).build())
                         .withDefaultCharacterRepresentation(Number.class, s -> "<number>")
@@ -475,8 +491,10 @@ class ObfuscationModuleTest {
                         .requireObfuscatorAnnotation(true)
                         .build();
 
-                ObjectMapper mapper = new ObjectMapper()
-                        .registerModule(module);
+                JsonMapper mapper = JsonMapper.builder()
+                        .addModule(module)
+                        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                        .build();
 
                 TestClass original = new TestClass();
 
@@ -554,11 +572,14 @@ class ObfuscationModuleTest {
 
         @Test
         @DisplayName("with non-deserializable type")
-        void testWithNonDeserializableType() throws IOException {
-            Module module = ObfuscationModule.defaultModule();
+        void testWithNonDeserializableType() {
+            JacksonModule module = ObfuscationModule.defaultModule();
 
-            ObjectMapper mapper = new ObjectMapper()
-                    .registerModule(module);
+            JsonMapper mapper = JsonMapper.builder()
+                    .addModule(module)
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .enable(MapperFeature.ALLOW_FINAL_FIELDS_AS_MUTATORS)
+                    .build();
 
             WithNonDeserializableType original = new WithNonDeserializableType();
 
@@ -579,13 +600,13 @@ class ObfuscationModuleTest {
 
             Reference reference = path.get(0);
             assertEquals(WithNonDeserializableType.class.getName() + "[\"value\"]", reference.getDescription());
-            assertEquals("value", reference.getFieldName());
+            assertEquals("value", reference.getPropertyName());
         }
 
         private List<LocalDate> toLocalDates(List<Date> dates) {
             return dates.stream()
                     .map(this::toLocalDate)
-                    .collect(toList());
+                    .toList();
         }
 
         private LocalDate toLocalDate(Date date) {
@@ -599,11 +620,13 @@ class ObfuscationModuleTest {
 
         @Test
         @DisplayName("serialize")
-        void testSerialize() throws IOException {
-            Module module = ObfuscationModule.defaultModule();
+        void testSerialize() {
+            JacksonModule module = ObfuscationModule.defaultModule();
 
-            ObjectMapper mapper = new ObjectMapper()
-                    .registerModule(module);
+            JsonMapper mapper = JsonMapper.builder()
+                    .addModule(module)
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
 
             Obfuscated<String> value = Obfuscator.fixedLength(8).obfuscateObject("foobar");
             List<String> list = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
@@ -618,11 +641,13 @@ class ObfuscationModuleTest {
 
         @Test
         @DisplayName("deserialize")
-        void testDeserialize() throws IOException {
-            Module module = ObfuscationModule.defaultModule();
+        void testDeserialize() {
+            JacksonModule module = ObfuscationModule.defaultModule();
 
-            ObjectMapper mapper = new ObjectMapper()
-                    .registerModule(module);
+            JsonMapper mapper = JsonMapper.builder()
+                    .addModule(module)
+                    .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                    .build();
 
             Obfuscated<String> value = Obfuscator.fixedLength(8).obfuscateObject("foobar");
             List<String> list = Obfuscator.all().obfuscateList(Arrays.asList("foo", "bar"));
@@ -651,8 +676,6 @@ class ObfuscationModuleTest {
         public Obfuscated<String> fixedValue = Obfuscator.all().obfuscateObject("foo");
 
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-        @JsonSerialize(using = DateSerializer.class)
-        @JsonDeserialize(using = DateDeserializer.class)
         public Obfuscated<Date> dateValue = Obfuscator.all().obfuscateObject(calculateDate());
 
         @ObfuscatePortion(keepAtStart = 1, keepAtEnd = 1, fixedTotalLength = 5)
@@ -814,18 +837,19 @@ class ObfuscationModuleTest {
         public final Obfuscated<Runnable> value = Obfuscator.all().obfuscateObject(() -> { /* do nothing */ });
     }
 
-    public static final class CustomSerializer extends JsonSerializer<ClassWithSerializer> {
+    public static final class CustomSerializer extends ValueSerializer<ClassWithSerializer> {
 
         @Override
-        public void serialize(ClassWithSerializer value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+        @SuppressWarnings("resource")
+        public void serialize(ClassWithSerializer value, JsonGenerator gen, SerializationContext ctxt) {
             gen.writeNumber(value.intValue);
         }
     }
 
-    public static final class CustomDeserializer extends JsonDeserializer<ClassWithSerializer> {
+    public static final class CustomDeserializer extends ValueDeserializer<ClassWithSerializer> {
 
         @Override
-        public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        public ClassWithSerializer deserialize(JsonParser p, DeserializationContext ctxt) {
             int intValue = p.getValueAsInt();
             return new ClassWithSerializer(intValue);
         }

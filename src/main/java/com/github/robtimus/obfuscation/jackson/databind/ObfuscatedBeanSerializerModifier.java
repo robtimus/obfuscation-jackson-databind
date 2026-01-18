@@ -19,24 +19,23 @@ package com.github.robtimus.obfuscation.jackson.databind;
 
 import java.util.List;
 import java.util.ListIterator;
-import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.SerializationConfig;
-import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
-import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
 import com.github.robtimus.obfuscation.Obfuscated;
+import tools.jackson.databind.BeanDescription.Supplier;
+import tools.jackson.databind.SerializationConfig;
+import tools.jackson.databind.ser.BeanPropertyWriter;
+import tools.jackson.databind.ser.ValueSerializerModifier;
 
-final class ObfuscatedBeanSerializerModifier extends BeanSerializerModifier {
+final class ObfuscatedBeanSerializerModifier extends ValueSerializerModifier {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public List<BeanPropertyWriter> changeProperties(SerializationConfig config, BeanDescription beanDesc, List<BeanPropertyWriter> beanProperties) {
+    public List<BeanPropertyWriter> changeProperties(SerializationConfig config, Supplier beanDesc, List<BeanPropertyWriter> beanProperties) {
         List<BeanPropertyWriter> properties = super.changeProperties(config, beanDesc, beanProperties);
         for (ListIterator<BeanPropertyWriter> i = properties.listIterator(); i.hasNext(); ) {
             BeanPropertyWriter property = i.next();
             if (property.getType().getRawClass() == Obfuscated.class) {
-                property = new ObfuscatedBeanPropertyWriter(property);
-                i.set(property);
+                i.set(new ObfuscatedBeanPropertyWriter(property));
             }
         }
         return properties;

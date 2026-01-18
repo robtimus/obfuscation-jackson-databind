@@ -17,11 +17,9 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
+import tools.jackson.databind.ser.BeanPropertyWriter;
 
 final class ObfuscatedBeanPropertyWriter extends BeanPropertyWriter {
-
-    private static final long serialVersionUID = 1L;
 
     ObfuscatedBeanPropertyWriter(BeanPropertyWriter base) {
         super(base);

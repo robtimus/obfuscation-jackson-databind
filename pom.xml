@@ -62,9 +62,9 @@
   </issueManagement>
 
   <properties>
-    <version.java>11</version.java>
+    <version.java>17</version.java>
 
-    <version.jackson>2.17.2</version.jackson>
+    <version.jackson>3.0.3</version.jackson>
     <version.obfuscation-annotations>2.0</version.obfuscation-annotations>
     <version.obfuscation-core>1.5</version.obfuscation-core>
   </properties>
@@ -83,7 +83,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
+      <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${version.jackson}</version>
     </dependency>
@@ -117,8 +117,8 @@
             <links>
               <link>https://robtimus.github.io/obfuscation-core/apidocs/</link>
               <link>https://robtimus.github.io/obfuscation-annotations/apidocs/</link>
-              <link>https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-core/${version.jackson}/</link>
-              <link>https://javadoc.io/doc/com.fasterxml.jackson.core/jackson-databind/${version.jackson}/</link>
+              <link>https://javadoc.io/doc/tools.jackson.core/jackson-core/${version.jackson}/</link>
+              <link>https://javadoc.io/doc/tools.jackson.core/jackson-databind/${version.jackson}/</link>
             </links>
           </configuration>
         </plugin>
@@ -255,8 +255,7 @@
     <profile>
       <id>min-versions</id>
       <properties>
-        <!-- Version 2.11.0 is the first one that supports being used in modules -->
-        <version.jackson>2.11.0</version.jackson>
+        <version.jackson>3.0.0</version.jackson>
       </properties>
     </profile>
   </profiles>

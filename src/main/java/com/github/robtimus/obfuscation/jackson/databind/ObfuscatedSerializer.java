@@ -17,29 +17,29 @@
 
 package com.github.robtimus.obfuscation.jackson.databind;
 
-import java.io.IOException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.BeanProperty;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.github.robtimus.obfuscation.Obfuscated;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.BeanProperty;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
 
-final class ObfuscatedSerializer extends JsonSerializer<Object> {
+final class ObfuscatedSerializer extends ValueSerializer<Object> {
 
     private final BeanProperty property;
-    private final JsonSerializer<Object> serializer;
+    private final ValueSerializer<Object> serializer;
 
-    ObfuscatedSerializer(BeanProperty property, JsonSerializer<Object> serializer) {
+    ObfuscatedSerializer(BeanProperty property, ValueSerializer<Object> serializer) {
         this.property = property;
         this.serializer = serializer;
     }
 
     @Override
-    public void serialize(Object object, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+    public void serialize(Object object, JsonGenerator gen, SerializationContext ctxt) throws JacksonException {
         Object value = ((Obfuscated<?>) object).value();
-        JsonSerializer<Object> actualSerializer = serializer != null
+        ValueSerializer<Object> actualSerializer = serializer != null
                 ? serializer
-                : serializers.findTypedValueSerializer(value.getClass(), true, property);
-        actualSerializer.serialize(value, gen, serializers);
+                : ctxt.findContentValueSerializer(value.getClass(), property);
+        actualSerializer.serialize(value, gen, ctxt);
     }
 }
