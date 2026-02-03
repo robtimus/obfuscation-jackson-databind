@@ -64,7 +64,8 @@
   <properties>
     <version.java>17</version.java>
 
-    <version.jackson>3.0.3</version.jackson>
+    <version.jackson>3.0.4</version.jackson>
+    <version.junit>6.0.2</version.junit>
     <version.obfuscation-annotations>2.0</version.obfuscation-annotations>
     <version.obfuscation-core>1.5</version.obfuscation-core>
   </properties>
