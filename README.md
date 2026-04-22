@@ -95,7 +95,7 @@ private Obfuscated<String> stringValue;
 private Obfuscated<Date> dateValue;
 ```
 
-Assume that DateFormat formats Date objects as `yyyy-MM-dd`, then this will obfuscate values like `1970-01-01` and not `Thu Jan 01 00:00:00 GMT 1970`.
+Assume that `DateFormat` formats `Date` objects as `yyyy-MM-dd`, then this will obfuscate values like `1970-01-01` and not `Thu Jan 01 00:00:00 GMT 1970`.
 
 Note that the format, serializer and deserializer target `Date`, not `Obfuscated`.
 
@@ -120,4 +120,4 @@ private List<String> regularList;
 private List<Date> obfuscatedList;
 ```
 
-Assume that DateFormat formats Date objects as `yyyy-MM-dd`, then this will obfuscate the days, leaving values like `1970-01-**`.
+Assume that `DateFormat` formats `Date` objects as `yyyy-MM-dd`, then this will obfuscate the days, leaving values like `1970-01-**`.
