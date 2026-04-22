@@ -7,8 +7,10 @@
 Provides support for serializing and deserializing obfuscated values using Jackson. All you need to do is register a module:
 
 ```java
-Module module = ObfuscationModule.defaultModule();
-mapper.registerModule(module);
+JacksonModule module = ObfuscationModule.defaultModule();
+JsonMapper mapper = JsonMapper.builder()
+        .addModule(module)
+        .build();
 ```
 
 This will automatically allow all instances of [Obfuscated](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscated.html) to be serialized and deserialized, without the need for any custom serializer or deserializer. In fact, any annotation used (apart from the ones below) will be used for the `Obfuscated` object's *value*, not the `Obfuscated` object itself. That means that you can provide custom serialization and/or deserialization for the value the way you're used to, without needing to wrap it inside a new serializer or deserializer.
