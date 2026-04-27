@@ -34,11 +34,13 @@ With the annotations from [obfuscation-annotations](https://robtimus.github.io/o
 By default, deserialized `Obfuscated` properties that are not annotated with any of the annotations from [obfuscation-annotations](https://robtimus.github.io/obfuscation-annotations) will use [Obfuscator.fixedLength(3)](https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#fixedLength-int-). This can be overridden by using a builder to create the module. With this builder, it's possible to define default obfuscators per type, or a global default obfuscator:
 
 ```java
-Module module = ObfuscationModule.builder()
+JacksonModule module = ObfuscationModule.builder()
         .withDefaultObfuscator(String.class, Obfuscator.portion().keepAtStart(2).build())
         .withDefaultObfuscator(Obfuscator.fixedValue("<obfuscated>"))
         .build();
-mapper.registerModule(module);
+JsonMapper mapper = JsonMapper.builder()
+        .addModule(module)
+        .build();
 ```
 
 A type-specific obfuscator will be used if the generic value type of the `Obfuscated` property matches. This takes into account super classes and implemented interfaces. If there is no match, the global default obfuscator is used.
