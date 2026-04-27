@@ -61,10 +61,12 @@ The following order is used to look up obfuscators for properties:
 Like default obfuscators, it's also possible to define default character representation providers per type:
 
 ```java
-Module module = ObfuscationModule.builder()
+JacksonModule module = ObfuscationModule.builder()
         .withDefaultCharacterRepresentation(Date.class, d -> formatDate(d))
         .build();
-mapper.registerModule(module);
+JsonMapper mapper = JsonMapper.builder()
+        .addModule(module)
+        .build();
 ```
 
 The matching will be the same as for default obfuscators.
