@@ -84,11 +84,13 @@ JsonMapper mapper = JsonMapper.builder()
 <h2>Default obfuscators</h2>
 <p>By default, deserialized <code>Obfuscated</code> properties that are not annotated with any of the annotations from <a href="https://robtimus.github.io/obfuscation-annotations" class="externalLink">obfuscation-annotations</a> will use <a href="https://robtimus.github.io/obfuscation-core/apidocs/com/github/robtimus/obfuscation/Obfuscator.html#fixedLength-int-" class="externalLink">Obfuscator.fixedLength(3)</a>. This can be overridden by using a builder to create the module. With this builder, it's possible to define default obfuscators per type, or a global default obfuscator:</p>
 
-<pre class="prettyprint"><code class="language-java">Module module = ObfuscationModule.builder()
+<pre class="prettyprint"><code class="language-java">JacksonModule module = ObfuscationModule.builder()
         .withDefaultObfuscator(String.class, Obfuscator.portion().keepAtStart(2).build())
         .withDefaultObfuscator(Obfuscator.fixedValue(&quot;&lt;obfuscated&gt;&quot;))
         .build();
-mapper.registerModule(module);
+JsonMapper mapper = JsonMapper.builder()
+        .addModule(module)
+        .build();
 </code></pre>
 <p>A type-specific obfuscator will be used if the generic value type of the <code>Obfuscated</code> property matches. This takes into account super classes and implemented interfaces. If there is no match, the global default obfuscator is used.</p>
 <p>A type-specific obfuscator will be used not just for <code>Obfuscated</code> properties, but also any <code>List</code>, <code>Set</code>, <code>Collection</code> or <code>Map</code> property with a matching generic element/value type. This can be disabled by calling <code>requireObfuscatorAnnotation(true)</code> on the builder. The global default obfuscator will not cause any <code>List</code>, <code>Set</code>, <code>Collection</code> or <code>Map</code> to be obfuscated.</p><section><a id="Obfuscator_lookup_order"></a>
@@ -104,10 +106,12 @@ mapper.registerModule(module);
 <h2>Default character representation providers</h2>
 <p>Like default obfuscators, it's also possible to define default character representation providers per type:</p>
 
-<pre class="prettyprint"><code class="language-java">Module module = ObfuscationModule.builder()
+<pre class="prettyprint"><code class="language-java">JacksonModule module = ObfuscationModule.builder()
         .withDefaultCharacterRepresentation(Date.class, d -&gt; formatDate(d))
         .build();
-mapper.registerModule(module);
+JsonMapper mapper = JsonMapper.builder()
+        .addModule(module)
+        .build();
 </code></pre>
 <p>The matching will be the same as for default obfuscators.</p>
 <p>Like type-specific obfuscators, a type-specific character representation provider will also be used for any <code>List</code>, <code>Set</code>, <code>Collection</code> or <code>Map</code> property with a matching generic element/value type that is obfuscated during deserialization.</p><section><a id="Character_representation_provider_lookup_order"></a>
